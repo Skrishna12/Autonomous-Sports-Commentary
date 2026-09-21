@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ascs"
+version = "0.1.0"
+description = "Autonomous Sports Commentary System — AI cricket commentators, live stats, and voice chat"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "Autonomous Sports Commentary" }]
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.32.0",
+  "pydantic-settings>=2.6.0",
+  "sqlalchemy>=2.0.36",
+  "pandas>=2.2.0",
+  "pyarrow>=17.0.0",
+  "httpx>=0.27.0",
+  "python-multipart>=0.0.12",
+  "prometheus-client>=0.21.0",
+  "langchain-core>=0.3.0",
+  "langgraph>=0.2.0",
+  "streamlit>=1.40.0",
+  "numpy>=2.0.0",
+  "soundfile>=0.12.1",
+  "boto3>=1.35.0",
+]
+
+[project.optional-dependencies]
+speech = ["faster-whisper>=1.0.0"]
+mlops = ["mlflow>=2.17.0"]
+llm = ["langchain-openai>=0.2.0"]
+sdk = ["cursor-sdk>=0.1.0"]
+dev = ["pytest>=8.3.0", "pytest-asyncio>=0.24.0"]
+
+[project.scripts]
+ascs = "ascs.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"

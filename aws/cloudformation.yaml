@@ -1,0 +1,39 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Free-tier oriented ASCS stack: t3.micro EC2 + optional RDS + S3. Shut down when idle.",
+  "Parameters": {
+    "KeyName": { "Type": "AWS::EC2::KeyPair::KeyName" },
+    "InstanceType": { "Type": "String", "Default": "t3.micro" }
+  },
+  "Resources": {
+    "RawBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": { "BucketName": { "Fn::Sub": "ascs-raw-${AWS::AccountId}" } }
+    },
+    "SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "ASCS web",
+        "SecurityGroupIngress": [
+          { "IpProtocol": "tcp", "FromPort": 22, "ToPort": 22, "CidrIp": "0.0.0.0/0" },
+          { "IpProtocol": "tcp", "FromPort": 8501, "ToPort": 8501, "CidrIp": "0.0.0.0/0" },
+          { "IpProtocol": "tcp", "FromPort": 8000, "ToPort": 8000, "CidrIp": "0.0.0.0/0" },
+          { "IpProtocol": "tcp", "FromPort": 3000, "ToPort": 3000, "CidrIp": "0.0.0.0/0" }
+        ]
+      }
+    },
+    "Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": { "Ref": "InstanceType" },
+        "KeyName": { "Ref": "KeyName" },
+        "SecurityGroupIds": [{ "Ref": "SecurityGroup" }],
+        "Tags": [{ "Key": "Name", "Value": "ascs-demo" }]
+      }
+    }
+  },
+  "Outputs": {
+    "PublicIP": { "Value": { "Fn::GetAtt": ["Instance", "PublicIp"] } },
+    "Bucket": { "Value": { "Ref": "RawBucket" } }
+  }
+}
