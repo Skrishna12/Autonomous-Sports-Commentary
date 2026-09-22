@@ -16,7 +16,18 @@
     quizI: 0,
     quizPicked: null,
     quizScore: 0,
+    flashI: 0,
+    flashShow: false,
   };
+
+  function nextStd() {
+    const order = ["as3", "indas7", "usgaap"];
+    return order[(order.indexOf(state.std) + 1) % order.length];
+  }
+
+  function ans(ch) {
+    return ch[state.std] || ch.as3;
+  }
 
   function save() {
     localStorage.setItem("cfs-xp", String(state.xp));
@@ -37,7 +48,7 @@
 
   function topbar() {
     const pct = Math.min(100, Math.round((state.xp / 200) * 100));
-    const std = CFS.standards[state.std];
+    const std = CFS.standards[state.std] || CFS.standards.as3;
     return `
       <div class="topbar">
         <div class="brand">
@@ -46,7 +57,7 @@
         </div>
         <div class="xp">
           <button class="btn ghost" data-go="hub" type="button">Lobby</button>
-          <button class="btn ghost" data-std="${state.std === "as3" ? "usgaap" : "as3"}" type="button">${std.label}</button>
+          <button class="btn ghost" data-std="${nextStd()}" type="button">${std.label}</button>
           <span>${rank()} · ${state.xp} XP</span>
           <div class="meter" aria-hidden="true"><span style="width:${pct}%"></span></div>
         </div>
@@ -77,6 +88,10 @@
           state.quizPicked = null;
           state.quizScore = 0;
         }
+        if (v === "drill") {
+          state.flashI = 0;
+          state.flashShow = false;
+        }
         state.view = v;
         render();
       })
@@ -96,10 +111,10 @@
         <div>
           <span class="kicker">Episode 01 · Statement of cash flows</span>
           <h1>Profit is a rumour.<br/>Cash is a fact.</h1>
-          <p class="lede">Your friend finished CA Intermediate and is warming up for US CMA. This studio turns AS-3 / ASC 230 into a short film, a sorting heist, a statement lab, and an exam quiz — one topic, four ways to stay awake.</p>
+          <p class="lede">CA Intermediate cash flow (AS-3) plus the Ind AS 7 and US CMA (ASC 230) traps. Built from ICAI’s standard, BoS lecture notes, and typical Inter classification papers — then turned into a film, a game, a lab and a quiz.</p>
           <div class="actions">
             <button class="btn primary" data-go="film" type="button">Play the short film</button>
-            <button class="btn" data-go="sort" type="button">Classify the cash</button>
+            <button class="btn" data-go="library" type="button">CA resource desk</button>
           </div>
         </div>
         <div class="poster" aria-hidden="true">
@@ -119,32 +134,42 @@
         </button>
         <button class="card" data-go="sort" type="button">
           <span class="tag">02 GAME</span>
-          <h3>Three buckets</h3>
-          <p>Drop twelve real items. Toggle CA Inter vs US CMA and watch interest & dividends jump rivers.</p>
+          <h3>Three rivers + leftovers</h3>
+          <p>26 ICAI-style items: O / I / F, cash equivalent, or not a cash flow. Toggle AS-3 · Ind AS 7 · US GAAP.</p>
         </button>
         <button class="card" data-go="lab" type="button">
           <span class="tag">03 LAB</span>
           <h3>Rebuild the CFS</h3>
-          <p>Indirect method from PAT to cash. Click the adjustments in the right order and watch the paper write itself.</p>
+          <p>Indirect method from PAT to cash. Click the adjustments and watch the paper write itself.</p>
         </button>
         <button class="card" data-go="quiz" type="button">
           <span class="tag">04 QUIZ</span>
-          <h3>Ten marks of pain</h3>
-          <p>CA Inter flavour with CMA traps. Explanations after every pick — no silent scoreboard.</p>
+          <h3>Inter + CMA paper</h3>
+          <p>Past-paper flavoured stems: FX bank balance, 2-year FD, fire claim, non-cash plant, Companies Act skip.</p>
+        </button>
+        <button class="card" data-go="drill" type="button">
+          <span class="tag">05 DRILL</span>
+          <h3>AS-3 flashcards</h3>
+          <p>Twelve paras you actually get marks for quoting: cash, equivalents, interest, tax, FX, non-cash.</p>
+        </button>
+        <button class="card" data-go="library" type="button">
+          <span class="tag">06 DESK</span>
+          <h3>Official links</h3>
+          <p>ICAI AS-3, BoS VCC PDFs, Intermediate course page, Ind AS 7, Companies Act, IMA CMA.</p>
         </button>
       </section>
       <section class="cheat">
-        <span class="kicker">Pocket table</span>
-        <h2 style="font-size:28px;margin:8px 0 12px">The items that change papers</h2>
+        <span class="kicker">Pocket table · non-financial company</span>
+        <h2 style="font-size:28px;margin:8px 0 12px">Where ICAI and CMA disagree</h2>
         <table>
-          <thead><tr><th>Item</th><th>CA Inter (AS-3)</th><th>US CMA (US GAAP)</th></tr></thead>
+          <thead><tr><th>Item</th><th>CA Inter (AS-3)</th><th>Ind AS 7</th><th>US CMA (US GAAP)</th></tr></thead>
           <tbody>
-            <tr><td>Interest paid</td><td>Financing</td><td>Operating</td></tr>
-            <tr><td>Interest received</td><td>Investing</td><td>Operating</td></tr>
-            <tr><td>Dividends received</td><td>Investing</td><td>Operating</td></tr>
-            <tr><td>Dividends paid</td><td>Financing</td><td>Financing</td></tr>
-            <tr><td>Tax paid (core)</td><td>Operating</td><td>Operating</td></tr>
-            <tr><td>Demand overdraft</td><td>Often netted in cash</td><td>Usually financing</td></tr>
+            <tr><td>Interest paid</td><td>Financing</td><td>O or F (be consistent)</td><td>Operating</td></tr>
+            <tr><td>Interest / dividends received</td><td>Investing</td><td>O or I (be consistent)</td><td>Operating</td></tr>
+            <tr><td>Dividends paid</td><td>Financing</td><td>F (or O if elected)</td><td>Financing</td></tr>
+            <tr><td>Demand overdraft</td><td>Financing (Inter RTP)</td><td>Often cash equivalent</td><td>Usually financing</td></tr>
+            <tr><td>Extraordinary cash</td><td>Classify + separate heading</td><td>No extraordinary heading</td><td>No extraordinary</td></tr>
+            <tr><td>Tax on core profit</td><td>Operating</td><td>Operating</td><td>Operating</td></tr>
           </tbody>
         </table>
       </section>`;
@@ -202,15 +227,16 @@
   }
 
   function sortView() {
-    const buckets = { op: [], inv: [], fin: [], pool: [] };
+    const buckets = { op: [], inv: [], fin: [], ceq: [], none: [], pool: [] };
     CFS.chips.forEach((ch) => {
       const b = state.sortMap[ch.id] || "pool";
       buckets[b].push(ch);
     });
+    const n = CFS.chips.length;
     const chip = (ch) => {
       let mark = "";
       if (state.sortChecked && state.sortMap[ch.id]) {
-        mark = state.sortMap[ch.id] === ch[state.std] ? " right" : " wrong";
+        mark = state.sortMap[ch.id] === ans(ch) ? " right" : " wrong";
       }
       return `<button class="chip${mark}" draggable="true" data-chip="${ch.id}" type="button">${ch.t}</button>`;
     };
@@ -220,19 +246,23 @@
     if (state.sortChecked) {
       let right = 0;
       CFS.chips.forEach((ch) => {
-        if (state.sortMap[ch.id] === ch[state.std]) right += 1;
+        if (state.sortMap[ch.id] === ans(ch)) right += 1;
       });
-      result = `<div class="feedback ${right === 12 ? "" : "wrong"}">${right}/12 correct under ${CFS.standards[state.std].label}. Interest paid, interest received and dividends received are the items that flip when you toggle the standard.</div>`;
+      result = `<div class="feedback ${right === n ? "" : "wrong"}">${right}/${n} under ${CFS.standards[state.std].label}. Overdraft, interest, TDS on subsidiary interest, and 3-month paper are the ones that jump when you rotate the standard.</div>`;
     }
     return `
-      <span class="kicker">Classification heist</span>
+      <span class="kicker">Classification heist · ICAI Inter list</span>
       <h2>Put every rupee in a river</h2>
-      <p class="lede">Click a chip, then click a bucket. Or drag. Standard in the top bar is the marking scheme — AS-3 and US GAAP do not agree on interest.</p>
+      <p class="lede">Click a chip, then a bucket. Fifth and sixth columns catch cash equivalents and non-cash items (bad debts, FX restatement, asset bought by issue of shares). Rotate AS-3 / Ind AS 7 / US GAAP in the top bar.</p>
       <div class="bucket sort-top" data-bucket="pool"><h3>Unsorted</h3>${buckets.pool.map(chip).join("") || "<p class='note'>All chips placed. Mark the paper.</p>"}</div>
-      <div class="buckets">
+      <div class="buckets five">
         ${bucket("op", "Operating", "op")}
         ${bucket("inv", "Investing", "inv")}
         ${bucket("fin", "Financing", "fin")}
+      </div>
+      <div class="buckets" style="grid-template-columns:1fr 1fr;margin-top:12px">
+        ${bucket("ceq", "Cash equivalent", "")}
+        ${bucket("none", "Not a cash flow", "")}
       </div>
       <div class="actions">
         <button class="btn primary" id="check-sort" type="button">Mark the paper</button>
@@ -280,9 +310,9 @@
         state.sortChecked = true;
         let right = 0;
         CFS.chips.forEach((ch) => {
-          if (state.sortMap[ch.id] === ch[state.std]) right += 1;
+          if (state.sortMap[ch.id] === ans(ch)) right += 1;
         });
-        if (right === 12 && !state.sortAwarded) {
+        if (right === CFS.chips.length && !state.sortAwarded) {
           addXp(20);
           state.sortAwarded = true;
         }
@@ -468,6 +498,63 @@
       });
   }
 
+  function drillView() {
+    const card = CFS.flash[state.flashI];
+    return `
+      <span class="kicker">AS-3 para drill ${state.flashI + 1} / ${CFS.flash.length}</span>
+      <h2>Quote the standard, then flip</h2>
+      <button class="flash" id="flip-card" type="button">
+        <div class="tag">${state.flashShow ? "ANSWER" : "PROMPT"}</div>
+        <p>${state.flashShow ? card.b : card.f}</p>
+      </button>
+      <div class="actions">
+        <button class="btn" id="prev-card" type="button">Back</button>
+        <button class="btn primary" id="next-card" type="button">Next para</button>
+      </div>`;
+  }
+
+  function bindDrill() {
+    const flip = $("#flip-card");
+    if (flip)
+      flip.addEventListener("click", () => {
+        state.flashShow = !state.flashShow;
+        if (state.flashShow) addXp(2);
+        render();
+      });
+    const n = $("#next-card");
+    if (n)
+      n.addEventListener("click", () => {
+        state.flashI = (state.flashI + 1) % CFS.flash.length;
+        state.flashShow = false;
+        render();
+      });
+    const p = $("#prev-card");
+    if (p)
+      p.addEventListener("click", () => {
+        state.flashI = (state.flashI - 1 + CFS.flash.length) % CFS.flash.length;
+        state.flashShow = false;
+        render();
+      });
+  }
+
+  function libraryView() {
+    const cards = CFS.resources
+      .map(
+        (r) => `
+        <a class="card res" href="${r.href}" target="_blank" rel="noopener noreferrer">
+          <span class="tag">${r.tag}</span>
+          <h3>${r.t}</h3>
+          <p>${r.d}</p>
+        </a>`
+      )
+      .join("");
+    return `
+      <span class="kicker">Resource desk</span>
+      <h2>Read the source, then play</h2>
+      <p class="lede">These are the live ICAI / MCA / IMA pages the studio is built from. Open a PDF, come back, and try the same idea in the film or the buckets. Not a substitute for BoS study material.</p>
+      <section class="modes">${cards}</section>`;
+  }
+
   function render() {
     if (state.view === "hub") mount(hub());
     else if (state.view === "film") {
@@ -479,9 +566,14 @@
     } else if (state.view === "lab") {
       mount(labView());
       bindLab();
-    } else if (state.view === "quiz") {
+    }     else if (state.view === "quiz") {
       mount(quizView());
       bindQuiz();
+    } else if (state.view === "drill") {
+      mount(drillView());
+      bindDrill();
+    } else if (state.view === "library") {
+      mount(libraryView());
     }
   }
 
