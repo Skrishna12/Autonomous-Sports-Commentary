@@ -29,7 +29,126 @@
     packFlashI: 0,
     packFlashShow: false,
     fileHint: "",
+    nav: [],
   };
+
+  let popping = false;
+
+  function snap() {
+    return {
+      view: state.view,
+      packTab: state.packTab,
+      pack: state.pack,
+      query: state.query,
+      wiki: state.wiki,
+      fileHint: state.fileHint,
+      filmI: state.filmI,
+      filmFb: state.filmFb,
+      quizI: state.quizI,
+      quizPicked: state.quizPicked,
+      packQuizI: state.packQuizI,
+      packQuizPicked: state.packQuizPicked,
+      packFlashI: state.packFlashI,
+      packFlashShow: state.packFlashShow,
+      flashI: state.flashI,
+      flashShow: state.flashShow,
+    };
+  }
+
+  function restore(s) {
+    Object.keys(s).forEach((k) => {
+      state[k] = s[k];
+    });
+  }
+
+  function pushHist() {
+    if (popping) return;
+    state.nav.push(snap());
+    try {
+      history.pushState({ depth: state.nav.length }, "", location.pathname + location.search + "#" + state.view);
+    } catch (e) {}
+  }
+
+  function go(view) {
+    if (view === "hub") {
+      state.nav = [];
+      state.view = "hub";
+      try {
+        history.pushState({ depth: 0 }, "", location.pathname + location.search + "#home");
+      } catch (e) {}
+      render();
+      return;
+    }
+    pushHist();
+    if (view === "film") state.filmI = 0;
+    if (view === "sort") {
+      state.sortMap = {};
+      state.sortChecked = false;
+      state.sortAwarded = false;
+    }
+    if (view === "lab") {
+      state.labUsed = {};
+      state.labAwarded = false;
+    }
+    if (view === "quiz") {
+      state.quizI = 0;
+      state.quizPicked = null;
+      state.quizScore = 0;
+    }
+    if (view === "drill") {
+      state.flashI = 0;
+      state.flashShow = false;
+    }
+    state.view = view;
+    render();
+  }
+
+  function back() {
+    if (!popping) {
+      if (state.view === "film" && state.filmI > 0) {
+        state.filmI -= 1;
+        state.filmFb = null;
+        render();
+        return;
+      }
+      if (state.view === "quiz" && state.quizI > 0) {
+        state.quizI -= 1;
+        state.quizPicked = null;
+        render();
+        return;
+      }
+      if (state.view === "pack" && state.packTab === "quiz" && state.packQuizI > 0) {
+        state.packQuizI -= 1;
+        state.packQuizPicked = null;
+        render();
+        return;
+      }
+      if (state.view === "pack" && state.packTab !== "teach") {
+        state.packTab = "teach";
+        render();
+        return;
+      }
+      if (state.view === "drill" && state.flashI > 0) {
+        state.flashI -= 1;
+        state.flashShow = false;
+        render();
+        return;
+      }
+    }
+    const prev = state.nav.pop();
+    if (!prev) {
+      state.view = "hub";
+    } else {
+      restore(prev);
+    }
+    render();
+  }
+
+  function leaveView() {
+    popping = true;
+    back();
+    popping = false;
+  }
 
   function nextStd() {
     const order = ["as3", "indas7", "usgaap"];
@@ -67,7 +186,8 @@
           <b>Just type the topic</b>
         </div>
         <div class="xp">
-          <button class="btn ghost" data-go="hub" type="button">Lobby</button>
+          ${state.view !== "hub" ? `<button class="btn primary" data-back type="button">← Back</button>` : ""}
+          <button class="btn ghost" data-go="hub" type="button">Home</button>
           <button class="btn ghost" data-std="${nextStd()}" type="button">${std.label}</button>
           <span>${rank()} · ${state.xp} XP</span>
           <div class="meter" aria-hidden="true"><span style="width:${pct}%"></span></div>
@@ -83,29 +203,11 @@
   function bind() {
     app.querySelectorAll("[data-go]").forEach((b) =>
       b.addEventListener("click", () => {
-        const v = b.getAttribute("data-go");
-        if (v === "film") state.filmI = 0;
-        if (v === "sort") {
-          state.sortMap = {};
-          state.sortChecked = false;
-          state.sortAwarded = false;
-        }
-        if (v === "lab") {
-          state.labUsed = {};
-          state.labAwarded = false;
-        }
-        if (v === "quiz") {
-          state.quizI = 0;
-          state.quizPicked = null;
-          state.quizScore = 0;
-        }
-        if (v === "drill") {
-          state.flashI = 0;
-          state.flashShow = false;
-        }
-        state.view = v;
-        render();
+        go(b.getAttribute("data-go"));
       })
+    );
+    app.querySelectorAll("[data-back]").forEach((b) =>
+      b.addEventListener("click", () => back())
     );
     app.querySelectorAll("[data-std]").forEach((b) =>
       b.addEventListener("click", () => {
@@ -244,10 +346,10 @@
         if (typeof c.ok === "boolean") state.filmFb = { ok: c.ok, tip: c.tip };
         else state.filmFb = null;
         if (c.next === "hub") {
-          state.view = "hub";
-        } else {
-          state.filmI = c.next;
+          leaveView();
+          return;
         }
+        state.filmI = c.next;
         render();
       })
     );
@@ -486,7 +588,7 @@
           <p class="lede" style="margin:12px auto">Cash flow is a story about timing. Replay the film or flip the standard and try the buckets again.</p>
           <div class="actions" style="justify-content:center">
             <button class="btn primary" data-go="quiz" type="button">Sit again</button>
-            <button class="btn" data-go="hub" type="button">Lobby</button>
+            <button class="btn" data-back type="button">Back</button>
           </div>
         </div>`;
     }
@@ -591,12 +693,13 @@
   }
 
   async function openPack(q, fileHint) {
+    pushHist();
     state.query = q;
     state.fileHint = fileHint || "";
     state.packTab = "teach";
     state.busy = true;
-    state.view = "pack";
     state.wiki = null;
+    state.view = "pack";
     state.pack = Engine.packFromQuery(q, fileHint);
     render();
     state.wiki = await Engine.wiki(q);
@@ -870,6 +973,12 @@
       bindPack();
     }
   }
+
+  window.addEventListener("popstate", () => {
+    popping = true;
+    back();
+    popping = false;
+  });
 
   render();
 })();

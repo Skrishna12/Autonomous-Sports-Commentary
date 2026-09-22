@@ -49,8 +49,8 @@ body {
   align-items: center;
   gap: 16px;
   margin-bottom: 28px;
+  flex-wrap: wrap;
 }
-
 .brand {
   display: flex;
   flex-direction: column;
@@ -70,6 +70,7 @@ body {
   gap: 12px;
   color: var(--muted);
   font-size: 13px;
+  flex-wrap: wrap;
 }
 .meter {
   width: 140px;
