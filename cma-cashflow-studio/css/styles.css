@@ -448,7 +448,47 @@ a.card { text-decoration: none; }
 }
 .flash .tag { color: var(--gold); font-family: "IBM Plex Mono", monospace; font-size: 11px; letter-spacing: 0.12em; }
 
+.search-hero { min-height: auto; padding-top: 12px; }
+.seek {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+.seek input {
+  flex: 1 1 260px;
+  min-height: 52px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: #121924;
+  color: var(--ink);
+  padding: 0 20px;
+  font: 500 16px/1.3 "IBM Plex Sans", sans-serif;
+}
+.upload {
+  display: inline-block;
+  margin-top: 14px;
+  color: var(--gold);
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 1px dashed var(--line);
+}
+.topic-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.chip-topic {
+  border: 1px solid var(--line);
+  background: #141b27;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font: 500 13px/1 "IBM Plex Sans", sans-serif;
+}
+.chip-topic:hover { border-color: var(--gold); }
+.papers { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 18px 0; }
+.plain { margin: 0; padding-left: 18px; color: var(--muted); line-height: 1.5; }
+.teach { color: var(--ink); line-height: 1.55; font-size: 16px; }
+.pack-body { margin-top: 8px; }
 @media (max-width: 900px) {
-  .hero, .film, .modes, .lab-grid, .buckets { grid-template-columns: 1fr; }
+  .hero, .film, .modes, .lab-grid, .buckets, .papers { grid-template-columns: 1fr; }
   .stage { min-height: 620px; }
 }

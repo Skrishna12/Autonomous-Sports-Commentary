@@ -1,21 +1,15 @@
-# Cashflow Confidential
+# CA + US CMA Studio
 
-Interactive CA Intermediate + US CMA studio for **cash flow statements**.
+For a CA Intermediate student moving to US CMA. **No tech skills needed.**
 
-## Play now (share this)
+## Play (send this link)
 
 https://raw.githack.com/Skrishna12/Autonomous-Sports-Commentary/cursor/cma-cashflow-studio-ba37/cma-cashflow-studio/index.html
 
-If that is slow, open `index.html` from this folder, or:
+1. Type the topic (GST, ratios, cash flow, ethics…).
+2. Or upload class notes / a PDF.
+3. Click **All CA + CMA links** — ICAI, RTP, MTP, IMA, YouTube, MCA, tax portals.
 
-```bash
-python3 -m http.server 8765
-```
+Cash flow still has the full film / game / lab.
 
-## What is inside
-
-- Short film, 26-item ICAI-style classifier, indirect-method lab, exam quiz, AS-3 flashcards
-- Resource desk with ICAI AS-3, BoS VCC PDFs, Intermediate course page, Ind AS 7, Companies Act, IMA CMA
-- Standard toggle: **AS-3 · Ind AS 7 · US GAAP**
-
-Study aid only — use ICAI BoS modules as the source of truth.
+Study aid only — ICAI BoS and IMA outlines remain the source of truth.

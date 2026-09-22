@@ -18,6 +18,17 @@
     quizScore: 0,
     flashI: 0,
     flashShow: false,
+    query: "",
+    pack: null,
+    packTab: "teach",
+    wiki: null,
+    busy: false,
+    packQuizI: 0,
+    packQuizPicked: null,
+    packQuizScore: 0,
+    packFlashI: 0,
+    packFlashShow: false,
+    fileHint: "",
   };
 
   function nextStd() {
@@ -52,8 +63,8 @@
     return `
       <div class="topbar">
         <div class="brand">
-          <small>Cashflow Confidential</small>
-          <b>CMA / CA Studio</b>
+          <small>CA + US CMA Studio</small>
+          <b>Just type the topic</b>
         </div>
         <div class="xp">
           <button class="btn ghost" data-go="hub" type="button">Lobby</button>
@@ -103,19 +114,60 @@
         render();
       })
     );
+    bindSearch();
+  }
+
+  function bindSearch() {
+    const form = $("#seek-form");
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const q = ($("#seek-input").value || "").trim();
+        if (q) openPack(q);
+      });
+    }
+    app.querySelectorAll("[data-q]").forEach((b) =>
+      b.addEventListener("click", () => openPack(b.getAttribute("data-q")))
+    );
+    const file = $("#seek-file");
+    if (file) file.addEventListener("change", () => handleFile(file.files && file.files[0]));
+    app.querySelectorAll("[data-tab]").forEach((b) =>
+      b.addEventListener("click", () => {
+        state.packTab = b.getAttribute("data-tab");
+        if (state.packTab === "quiz") {
+          state.packQuizI = 0;
+          state.packQuizPicked = null;
+          state.packQuizScore = 0;
+        }
+        if (state.packTab === "flash") {
+          state.packFlashI = 0;
+          state.packFlashShow = false;
+        }
+        render();
+      })
+    );
   }
 
   function hub() {
+    const chips = TOPICS.map(
+      (t) => `<button class="chip-topic" data-q="${t.title}" type="button">${t.title}</button>`
+    ).join("");
     return `
-      <section class="hero">
+      <section class="hero search-hero">
         <div>
-          <span class="kicker">Episode 01 · Statement of cash flows</span>
-          <h1>Profit is a rumour.<br/>Cash is a fact.</h1>
-          <p class="lede">CA Intermediate cash flow (AS-3) plus the Ind AS 7 and US CMA (ASC 230) traps. Built from ICAI’s standard, BoS lecture notes, and typical Inter classification papers — then turned into a film, a game, a lab and a quiz.</p>
-          <div class="actions">
-            <button class="btn primary" data-go="film" type="button">Play the short film</button>
-            <button class="btn" data-go="library" type="button">CA resource desk</button>
-          </div>
+          <span class="kicker">No login · No app install · Type like you text</span>
+          <h1>What are you studying today?</h1>
+          <p class="lede">Type a topic — GST, ratios, ethics, NPV, cash flow — or upload class notes / a PDF. The studio matches CA Intermediate papers and US CMA parts, then opens official ICAI, IMA, RTP/MTP and video searches for you.</p>
+          <form class="seek" id="seek-form">
+            <input id="seek-input" type="search" name="q" autocomplete="off" placeholder="e.g. cash flow statement, GST ITC, standard costing…" />
+            <button class="btn primary" type="submit">Find resources</button>
+          </form>
+          <label class="upload">
+            <input id="seek-file" type="file" accept=".pdf,.txt,.md,.text" hidden />
+            Or upload notes / PDF
+          </label>
+          <p class="note" id="seek-status"></p>
+          <div class="topic-chips">${chips}</div>
         </div>
         <div class="poster" aria-hidden="true">
           <div class="river">
@@ -123,55 +175,30 @@
             <div class="cash-lane inv"></div>
             <div class="cash-lane fin"></div>
           </div>
-          <div class="poster-caption">Three rivers: Operating (teal) · Investing (blue) · Financing (gold)</div>
+          <div class="poster-caption">CA Inter papers 1–6 · US CMA Part 1 & 2 · official links, not random blogs first</div>
         </div>
       </section>
       <section class="modes">
-        <button class="card" data-go="film" type="button">
-          <span class="tag">01 FILM</span>
-          <h3>Night at Meridian</h3>
-          <p>A 7-scene interactive short. Every wrong classification is a plot twist with a teaching note.</p>
+        <button class="card" data-q="Cash flow statement" type="button">
+          <span class="tag">FEATURED</span>
+          <h3>Cash flow (game inside)</h3>
+          <p>Already built as a film, classifier, lab and quiz — the first full playground.</p>
         </button>
-        <button class="card" data-go="sort" type="button">
-          <span class="tag">02 GAME</span>
-          <h3>Three rivers + leftovers</h3>
-          <p>26 ICAI-style items: O / I / F, cash equivalent, or not a cash flow. Toggle AS-3 · Ind AS 7 · US GAAP.</p>
+        <button class="card" data-q="Ratio analysis" type="button">
+          <span class="tag">FM / CMA P2</span>
+          <h3>Ratio analysis</h3>
+          <p>Liquidity, leverage, DuPont — CA 6A and CMA statement analysis.</p>
         </button>
-        <button class="card" data-go="lab" type="button">
-          <span class="tag">03 LAB</span>
-          <h3>Rebuild the CFS</h3>
-          <p>Indirect method from PAT to cash. Click the adjustments and watch the paper write itself.</p>
+        <button class="card" data-q="GST" type="button">
+          <span class="tag">CA TAX</span>
+          <h3>GST</h3>
+          <p>Supply, ITC, IGST vs CGST — plus official GST portal search.</p>
         </button>
-        <button class="card" data-go="quiz" type="button">
-          <span class="tag">04 QUIZ</span>
-          <h3>Inter + CMA paper</h3>
-          <p>Past-paper flavoured stems: FX bank balance, 2-year FD, fire claim, non-cash plant, Companies Act skip.</p>
+        <button class="card" data-q="Internal controls COSO" type="button">
+          <span class="tag">AUDIT / CMA</span>
+          <h3>Internal controls</h3>
+          <p>COSO cube — CA audit paper and a CMA Part 1 heavy-hitter.</p>
         </button>
-        <button class="card" data-go="drill" type="button">
-          <span class="tag">05 DRILL</span>
-          <h3>AS-3 flashcards</h3>
-          <p>Twelve paras you actually get marks for quoting: cash, equivalents, interest, tax, FX, non-cash.</p>
-        </button>
-        <button class="card" data-go="library" type="button">
-          <span class="tag">06 DESK</span>
-          <h3>Official links</h3>
-          <p>ICAI AS-3, BoS VCC PDFs, Intermediate course page, Ind AS 7, Companies Act, IMA CMA.</p>
-        </button>
-      </section>
-      <section class="cheat">
-        <span class="kicker">Pocket table · non-financial company</span>
-        <h2 style="font-size:28px;margin:8px 0 12px">Where ICAI and CMA disagree</h2>
-        <table>
-          <thead><tr><th>Item</th><th>CA Inter (AS-3)</th><th>Ind AS 7</th><th>US CMA (US GAAP)</th></tr></thead>
-          <tbody>
-            <tr><td>Interest paid</td><td>Financing</td><td>O or F (be consistent)</td><td>Operating</td></tr>
-            <tr><td>Interest / dividends received</td><td>Investing</td><td>O or I (be consistent)</td><td>Operating</td></tr>
-            <tr><td>Dividends paid</td><td>Financing</td><td>F (or O if elected)</td><td>Financing</td></tr>
-            <tr><td>Demand overdraft</td><td>Financing (Inter RTP)</td><td>Often cash equivalent</td><td>Usually financing</td></tr>
-            <tr><td>Extraordinary cash</td><td>Classify + separate heading</td><td>No extraordinary heading</td><td>No extraordinary</td></tr>
-            <tr><td>Tax on core profit</td><td>Operating</td><td>Operating</td><td>Operating</td></tr>
-          </tbody>
-        </table>
       </section>`;
   }
 
@@ -555,6 +582,230 @@
       <section class="modes">${cards}</section>`;
   }
 
+  async function openPack(q, fileHint) {
+    state.query = q;
+    state.fileHint = fileHint || "";
+    state.packTab = "teach";
+    state.busy = true;
+    state.view = "pack";
+    state.wiki = null;
+    state.pack = Engine.packFromQuery(q, fileHint);
+    render();
+    state.wiki = await Engine.wiki(q);
+    state.busy = false;
+    render();
+  }
+
+  function loadPdfJs() {
+    return new Promise((resolve, reject) => {
+      if (window.pdfjsLib) return resolve(window.pdfjsLib);
+      const s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      s.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+        resolve(window.pdfjsLib);
+      };
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function textFromPdf(file) {
+    const pdfjs = await loadPdfJs();
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    const max = Math.min(doc.numPages, 8);
+    let text = "";
+    for (let i = 1; i <= max; i += 1) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map((it) => it.str).join(" ") + " ";
+    }
+    return text;
+  }
+
+  async function handleFile(file) {
+    if (!file) return;
+    const status = $("#seek-status");
+    if (status) status.textContent = "Reading " + file.name + "…";
+    try {
+      let text = "";
+      if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") text = await textFromPdf(file);
+      else text = await file.text();
+      const slice = text.slice(0, 4000);
+      const q = Engine.tokens(slice).slice(0, 12).join(" ") || file.name.replace(/\.[^.]+$/, "");
+      await openPack(q, file.name);
+    } catch (err) {
+      if (status) status.textContent = "Could not read that file. Type the topic instead — even one word is enough.";
+    }
+  }
+
+  function packBank() {
+    const t = state.pack && state.pack.topic;
+    if (t && t.studio === "cfs") return { quiz: CFS.quiz, flash: CFS.flash };
+    return { quiz: (t && t.quiz) || [], flash: (t && t.flash) || [] };
+  }
+
+  function packView() {
+    if (state.busy && !state.pack) {
+      return `<p class="lede">Searching CA and US CMA resources…</p>`;
+    }
+    const p = state.pack;
+    const topic = p.topic;
+    const title = topic ? topic.title : p.query;
+    const ca = (p.papers.ca || []).map((x) => `<li>${x}</li>`).join("");
+    const cma = (p.papers.cma || []).map((x) => `<li>${x}</li>`).join("");
+    const also = (p.also || [])
+      .map((t) => `<button class="chip-topic" data-q="${t.title}" type="button">${t.title}</button>`)
+      .join("");
+    const tabs = ["teach", "flash", "quiz", "links"]
+      .map((k) => {
+        const label = { teach: "Explain", flash: "Flashcards", quiz: "Quiz", links: "All CA + CMA links" }[k];
+        return `<button class="btn ${state.packTab === k ? "primary" : "ghost"}" data-tab="${k}" type="button">${label}</button>`;
+      })
+      .join("");
+    const studio =
+      topic && topic.studio === "cfs"
+        ? `<div class="actions">
+            <button class="btn primary" data-go="film" type="button">Play the cash-flow film</button>
+            <button class="btn" data-go="sort" type="button">Classification game</button>
+            <button class="btn" data-go="lab" type="button">Statement lab</button>
+          </div>`
+        : "";
+    return `
+      <span class="kicker">${p.fileHint ? "From your file · " + p.fileHint : "Study pack"}</span>
+      <h2>${title}</h2>
+      <p class="lede">${topic ? topic.blurb : "No built-in lesson for this exact title yet — papers are guessed from the words, and every official CA / CMA search below is live."}</p>
+      <div class="papers">
+        <div class="bucket op"><h3>CA Intermediate</h3><ul class="plain">${ca}</ul></div>
+        <div class="bucket inv"><h3>US CMA</h3><ul class="plain">${cma}</ul></div>
+      </div>
+      ${studio}
+      ${also ? `<p class="note" style="margin-top:16px">Nearby topics</p><div class="topic-chips">${also}</div>` : ""}
+      <div class="actions" style="margin-top:22px">${tabs}</div>
+      <div class="pack-body">${packTabBody()}</div>`;
+  }
+
+  function packTabBody() {
+    const p = state.pack;
+    const topic = p.topic;
+    const bank = packBank();
+    if (state.packTab === "links") {
+      const cards = p.portals
+        .map(
+          (r) => `
+          <a class="card res" href="${r.href}" target="_blank" rel="noopener noreferrer">
+            <span class="tag">${r.tag}</span>
+            <h3>${r.t}</h3>
+            <p>${r.d}</p>
+          </a>`
+        )
+        .join("");
+      return `<p class="note">Each card opens a search already aimed at ICAI, IMA, RTP/MTP, MCA, tax portals or YouTube. Your friend only clicks.</p><section class="modes">${cards}</section>`;
+    }
+    if (state.packTab === "flash") {
+      const cards = bank.flash;
+      if (!cards.length) return `<p class="lede">No flashcards baked in for this topic yet. Open “All CA + CMA links” and use ICAI SM / IMA outline. Or pick a nearby topic chip.</p>`;
+      const card = cards[state.packFlashI % cards.length];
+      return `
+        <span class="kicker">${(state.packFlashI % cards.length) + 1} / ${cards.length}</span>
+        <button class="flash" id="pack-flip" type="button">
+          <div class="tag">${state.packFlashShow ? "ANSWER" : "PROMPT"}</div>
+          <p>${state.packFlashShow ? card.b : card.f}</p>
+        </button>
+        <div class="actions">
+          <button class="btn" id="pack-prev-f" type="button">Back</button>
+          <button class="btn primary" id="pack-next-f" type="button">Next</button>
+        </div>`;
+    }
+    if (state.packTab === "quiz") {
+      const qs = bank.quiz;
+      if (!qs.length) return `<p class="lede">No quiz bank for this title yet. Use RTP/MTP links in the last tab — those are the real ICAI questions.</p>`;
+      if (state.packQuizI >= qs.length) {
+        return `<div class="ending"><div class="score-big">${state.packQuizScore}/${qs.length}</div>
+          <div class="actions" style="justify-content:center"><button class="btn primary" data-tab="quiz" type="button">Again</button></div></div>`;
+      }
+      const item = qs[state.packQuizI];
+      const picked = state.packQuizPicked;
+      const opts = item.opts
+        .map((o, i) => {
+          let cls = "opt";
+          if (picked !== null) {
+            if (i === item.a) cls += " correct";
+            else if (i === picked) cls += " incorrect";
+          }
+          return `<button class="${cls}" data-pack-opt="${i}" type="button" ${picked !== null ? "disabled" : ""}>${o}</button>`;
+        })
+        .join("");
+      return `<div class="quiz">
+        <span class="kicker">Question ${state.packQuizI + 1} / ${qs.length}</span>
+        <h2 class="q">${item.q}</h2>
+        <div class="options">${opts}</div>
+        ${picked !== null ? `<p class="explain">${item.explain}</p><div class="actions"><button class="btn primary" id="pack-next-q" type="button">Next</button></div>` : ""}
+      </div>`;
+    }
+    const notes = ((topic && topic.notes) || []).map((n) => `<li>${n}</li>`).join("");
+    const wiki = state.wiki
+      ? `<div class="cheat" style="margin-top:22px"><span class="kicker">Plain-English snapshot (Wikipedia)</span>
+          <h2 style="font-size:28px;margin:8px 0 10px">${state.wiki.title}</h2>
+          <p class="note">${state.wiki.extract || ""}</p>
+          ${state.wiki.url ? `<p><a class="btn" href="${state.wiki.url}" target="_blank" rel="noopener">Read more</a></p>` : ""}
+          <p class="note">Wikipedia is a start, not an ICAI module. Use the links tab for BoS / IMA.</p>
+        </div>`
+      : state.busy
+        ? `<p class="note">Fetching a plain-English snapshot…</p>`
+        : "";
+    return `
+      ${notes ? `<ul class="teach">${notes}</ul>` : `<p class="lede">Use the links tab — it already searched ICAI, RTP, MTP, IMA and YouTube for “${p.query}”.</p>`}
+      ${wiki}`;
+  }
+
+  function bindPack() {
+    const flip = $("#pack-flip");
+    if (flip)
+      flip.addEventListener("click", () => {
+        state.packFlashShow = !state.packFlashShow;
+        if (state.packFlashShow) addXp(2);
+        render();
+      });
+    const nf = $("#pack-next-f");
+    if (nf)
+      nf.addEventListener("click", () => {
+        const n = packBank().flash.length || 1;
+        state.packFlashI = (state.packFlashI + 1) % n;
+        state.packFlashShow = false;
+        render();
+      });
+    const pf = $("#pack-prev-f");
+    if (pf)
+      pf.addEventListener("click", () => {
+        const n = packBank().flash.length || 1;
+        state.packFlashI = (state.packFlashI - 1 + n) % n;
+        state.packFlashShow = false;
+        render();
+      });
+    app.querySelectorAll("[data-pack-opt]").forEach((b) =>
+      b.addEventListener("click", () => {
+        if (state.packQuizPicked !== null) return;
+        const i = Number(b.getAttribute("data-pack-opt"));
+        state.packQuizPicked = i;
+        if (i === packBank().quiz[state.packQuizI].a) {
+          state.packQuizScore += 1;
+          addXp(8);
+        }
+        render();
+      })
+    );
+    const nq = $("#pack-next-q");
+    if (nq)
+      nq.addEventListener("click", () => {
+        state.packQuizI += 1;
+        state.packQuizPicked = null;
+        render();
+      });
+  }
+
   function render() {
     if (state.view === "hub") mount(hub());
     else if (state.view === "film") {
@@ -574,6 +825,9 @@
       bindDrill();
     } else if (state.view === "library") {
       mount(libraryView());
+    } else if (state.view === "pack") {
+      mount(packView());
+      bindPack();
     }
   }
 
