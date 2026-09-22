@@ -3,7 +3,9 @@
   const app = $("#app");
   const state = {
     view: "hub",
-    std: localStorage.getItem("cfs-std") || "as3",
+    std: ["usgaap", "ifrs"].includes(localStorage.getItem("cfs-std"))
+      ? localStorage.getItem("cfs-std")
+      : "usgaap",
     xp: Number(localStorage.getItem("cfs-xp") || 0),
     filmI: 0,
     filmNote: "Watch, then choose. Wrong answers still teach — they just pay less XP.",
@@ -156,12 +158,13 @@
   }
 
   function nextStd() {
-    const order = ["as3", "indas7", "usgaap"];
-    return order[(order.indexOf(state.std) + 1) % order.length];
+    const order = ["usgaap", "ifrs"];
+    const i = Math.max(0, order.indexOf(state.std));
+    return order[(i + 1) % order.length];
   }
 
   function ans(ch) {
-    return ch[state.std] || ch.as3;
+    return ch[state.std] || ch.usgaap;
   }
 
   function save() {
@@ -175,19 +178,19 @@
   }
 
   function rank() {
-    if (state.xp >= 180) return "CFO of the night";
-    if (state.xp >= 110) return "Senior associate";
-    if (state.xp >= 50) return "Article assistant";
-    return "Intern";
+    if (state.xp >= 180) return "Controller of the night";
+    if (state.xp >= 110) return "Part 2 ready";
+    if (state.xp >= 50) return "Part 1 ready";
+    return "CMA candidate";
   }
 
   function topbar() {
     const pct = Math.min(100, Math.round((state.xp / 200) * 100));
-    const std = CFS.standards[state.std] || CFS.standards.as3;
+    const std = CFS.standards[state.std] || CFS.standards.usgaap;
     return `
       <div class="topbar">
         <div class="brand">
-          <small>CA + US CMA Studio</small>
+          <small>US CMA Studio</small>
           <b>Just type the topic</b>
         </div>
         <div class="xp">
@@ -265,9 +268,9 @@
         <div>
           <span class="kicker">No login · No app install · Type like you text</span>
           <h1>What are you studying today?</h1>
-          <p class="lede">Type a topic — GST, ratios, ethics, NPV, cash flow — or upload class notes / a PDF. The studio matches CA Intermediate papers and US CMA parts, then opens official ICAI, IMA, RTP/MTP and video searches for you.</p>
+          <p class="lede">Type a US CMA topic — cash flow, COSO, WACC, ethics, NPV — or upload class notes / a PDF. The studio maps it to the 2024 IMA outline (Part 1 &amp; 2), pulls a plain-English snapshot, and opens every official IMA / FASB / SEC / COSO search for you.</p>
           <form class="seek" id="seek-form">
-            <input id="seek-input" type="search" name="q" autocomplete="off" placeholder="e.g. cash flow statement, GST ITC, standard costing…" />
+            <input id="seek-input" type="search" name="q" autocomplete="off" placeholder="e.g. statement of cash flows, COSO, WACC…" />
             <button class="btn primary" type="submit">Find resources</button>
           </form>
           <label class="upload">
@@ -283,7 +286,7 @@
             <div class="cash-lane inv"></div>
             <div class="cash-lane fin"></div>
           </div>
-          <div class="poster-caption">CA Inter papers 1–6 · US CMA Part 1 & 2 · official links, not random blogs first</div>
+          <div class="poster-caption">IMA CSO 2024 · Part 1 &amp; 2 · official IMA, FASB, SEC, COSO first</div>
         </div>
       </section>
       <section class="modes">
@@ -293,19 +296,19 @@
           <p>Already built as a film, classifier, lab and quiz — the first full playground.</p>
         </button>
         <button class="card" data-q="Ratio analysis" type="button">
-          <span class="tag">FM / CMA P2</span>
+          <span class="tag">CMA P2</span>
           <h3>Ratio analysis</h3>
-          <p>Liquidity, leverage, DuPont — CA 6A and CMA statement analysis.</p>
+          <p>Liquidity, leverage, DuPont — Part 2 financial statement analysis.</p>
         </button>
-        <button class="card" data-q="GST" type="button">
-          <span class="tag">CA TAX</span>
-          <h3>GST</h3>
-          <p>Supply, ITC, IGST vs CGST — plus official GST portal search.</p>
+        <button class="card" data-q="WACC" type="button">
+          <span class="tag">CMA P2</span>
+          <h3>WACC &amp; capital</h3>
+          <p>Cost of capital, CAPM, and capital-budgeting cousins (NPV / IRR).</p>
         </button>
-        <button class="card" data-q="Internal controls COSO" type="button">
-          <span class="tag">AUDIT / CMA</span>
-          <h3>Internal controls</h3>
-          <p>COSO cube — CA audit paper and a CMA Part 1 heavy-hitter.</p>
+        <button class="card" data-go="library" type="button">
+          <span class="tag">ALL SOURCES</span>
+          <h3>Resource desk</h3>
+          <p>IMA CSO, LOS, handbook, ethics, FASB ASC 230, COSO, SEC — one click each.</p>
         </button>
       </section>`;
   }
@@ -383,12 +386,12 @@
       CFS.chips.forEach((ch) => {
         if (state.sortMap[ch.id] === ans(ch)) right += 1;
       });
-      result = `<div class="feedback ${right === n ? "" : "wrong"}">${right}/${n} under ${CFS.standards[state.std].label}. Overdraft, interest, TDS on subsidiary interest, and 3-month paper are the ones that jump when you rotate the standard.</div>`;
+      result = `<div class="feedback ${right === n ? "" : "wrong"}">${right}/${n} under ${CFS.standards[state.std].label}. Interest, dividends received, overdrafts, and 3-month paper are the ones that jump when you toggle IFRS.</div>`;
     }
     return `
-      <span class="kicker">Classification heist · ICAI Inter list</span>
-      <h2>Put every rupee in a river</h2>
-      <p class="lede">Click a chip, then a bucket. Fifth and sixth columns catch cash equivalents and non-cash items (bad debts, FX restatement, asset bought by issue of shares). Rotate AS-3 / Ind AS 7 / US GAAP in the top bar.</p>
+      <span class="kicker">Classification heist · ASC 230</span>
+      <h2>Put every dollar in a river</h2>
+      <p class="lede">Click a chip, then a bucket. Fifth and sixth columns catch cash equivalents and non-cash items (bad debts, FX restatement, asset bought by issue of shares). The top bar toggles US GAAP (CMA default) vs IFRS contrast.</p>
       <div class="bucket sort-top" data-bucket="pool"><h3>Unsorted</h3>${buckets.pool.map(chip).join("") || "<p class='note'>All chips placed. Mark the paper.</p>"}</div>
       <div class="buckets five">
         ${bucket("op", "Operating", "op")}
@@ -466,26 +469,23 @@
     const f = CFS.labFacts;
     const u = state.labUsed;
     const steps = [
-      { id: "dep", label: `Add depreciation ₹${f.dep}L`, why: "Non-cash expense sitting inside PAT." },
-      { id: "gain", label: `Deduct gain on van ₹${f.gainVan}L`, why: "Gain is in PAT; proceeds belong in investing." },
-      { id: "int", label: `Add back interest paid ₹${f.intPaid}L (AS-3)`, why: "AS-3 shows interest as financing, so strip it from operating first." },
-      { id: "wc", label: `Working capital: inv +${f.dInv}, AR +${f.dAr}, AP ${f.dAp}`, why: "₹45L absorbed. Increases in CA and fall in CL are uses of cash." },
-      { id: "tax", label: `Deduct tax paid ₹${f.taxPaid}L`, why: "Tax on operations is an operating outflow." },
+      { id: "dep", label: `Add depreciation $${f.dep}0,000`, why: "Non-cash expense sitting inside net income." },
+      { id: "gain", label: `Deduct gain on van $${f.gainVan}0,000`, why: "Gain is in net income; proceeds belong in investing." },
+      { id: "wc", label: `Working capital: inv +${f.dInv}, AR +${f.dAr}, AP ${f.dAp}`, why: "$450,000 absorbed. Increases in current assets and a fall in current liabilities use cash." },
+      { id: "tax", label: `Deduct tax paid $${f.taxPaid}0,000`, why: "Income taxes paid are an operating outflow under US GAAP." },
     ];
 
     let cfo = f.pat;
     if (u.dep) cfo += f.dep;
     if (u.gain) cfo -= f.gainVan;
-    if (u.int) cfo += f.intPaid;
     if (u.wc) cfo -= f.dInv + f.dAr - f.dAp;
     if (u.tax) cfo -= f.taxPaid;
 
-    const inv = -(u.plant ? f.plant : 0) + (u.van ? f.van : 0) + (u.intrec ? f.intRec : 0);
+    const inv = -(u.plant ? f.plant : 0) + (u.van ? f.van : 0);
     const fin =
       (u.loan ? f.loan : 0) -
       (u.repay ? f.loanRepay : 0) -
-      (u.div ? f.divPaid : 0) -
-      (u.intfin ? f.intPaid : 0);
+      (u.div ? f.divPaid : 0);
     const net = (u.opdone ? cfo : 0) + (u.invdone ? inv : 0) + (u.findone ? fin : 0);
     const close = f.openCash + (u.bridge ? net : 0);
 
@@ -493,10 +493,9 @@
       `<div class="row ${extra}"><span>${k}</span><span>${v}</span></div>`;
 
     const ops = [
-      row("Profit after tax", f.pat),
+      row("Net income", f.pat),
       u.dep ? row("Depreciation", `+${f.dep}`) : "",
       u.gain ? row("Gain on sale of van", `(${f.gainVan})`) : "",
-      u.int ? row("Interest paid (add back, AS-3)", `+${f.intPaid}`) : "",
       u.wc ? row("Working capital absorption", `(${f.dInv + f.dAr - f.dAp})`) : "",
       u.tax ? row("Tax paid", `(${f.taxPaid})`) : "",
       u.opdone ? row("Cash from operations", cfo, "total") : "",
@@ -505,14 +504,12 @@
     const invRows = [
       u.plant ? row("Plant acquired (cash)", `(${f.plant})`) : "",
       u.van ? row("Proceeds — van", f.van) : "",
-      u.intrec ? row("Interest received (AS-3 investing)", f.intRec) : "",
       u.invdone ? row("Cash from investing", inv, "total") : "",
     ].join("");
 
     const finRows = [
       u.loan ? row("Term loan drawn", f.loan) : "",
       u.repay ? row("Loan repaid", `(${f.loanRepay})`) : "",
-      u.intfin ? row("Interest paid (AS-3 financing)", `(${f.intPaid})`) : "",
       u.div ? row("Dividend paid", `(${f.divPaid})`) : "",
       u.findone ? row("Cash from financing", fin, "total") : "",
     ].join("");
@@ -523,12 +520,12 @@
     const complete = u.bridge;
 
     return `
-      <span class="kicker">Indirect method · AS-3 presentation</span>
+      <span class="kicker">Indirect method · US GAAP (ASC 230)</span>
       <h2>Write Meridian’s cash flow</h2>
-      <p class="lede">PAT ₹${f.pat}L is already on the page. Apply adjustments on the right. Investing and financing still need their cash lines. Opening cash is ₹${f.openCash}L.</p>
+      <p class="lede">Net income $${f.pat}0,000 is already on the page. Apply adjustments on the right. Interest paid and interest received stay in operating under US GAAP (already in net income). Opening cash is $${f.openCash}0,000.</p>
       <div class="lab-grid">
         <div class="stmt">
-          <h3>Meridian Teas · Cash Flow Statement</h3>
+          <h3>Meridian Teas · Statement of Cash Flows</h3>
           <div class="row total"><span>A. Operating activities</span><span></span></div>
           ${ops || '<div class="row"><span>Awaiting adjustments…</span><span></span></div>'}
           <div class="row total"><span>B. Investing activities</span><span></span></div>
@@ -545,18 +542,16 @@
           <p class="note" style="margin-top:14px">Lock operating total when the bridge feels complete</p>
           ${pal("opdone", "Lock cash from operations")}
           <p class="note" style="margin-top:14px">Investing cash</p>
-          ${pal("plant", "Plant paid ₹45L")}
-          ${pal("van", "Van proceeds ₹5L")}
-          ${pal("intrec", "Interest received ₹3L")}
+          ${pal("plant", "Plant paid $450,000")}
+          ${pal("van", "Van proceeds $50,000")}
           ${pal("invdone", "Lock cash from investing")}
           <p class="note" style="margin-top:14px">Financing cash</p>
-          ${pal("loan", "Loan drawn ₹40L")}
-          ${pal("repay", "Principal repaid ₹12L")}
-          ${pal("intfin", "Interest paid ₹6L")}
-          ${pal("div", "Dividend paid ₹8L")}
+          ${pal("loan", "Loan drawn $400,000")}
+          ${pal("repay", "Principal repaid $120,000")}
+          ${pal("div", "Dividend paid $80,000")}
           ${pal("findone", "Lock cash from financing")}
           ${pal("bridge", "Reconcile opening → closing cash")}
-          ${complete ? `<div class="feedback" style="margin-top:12px">Closing cash ₹${close}L. If this matches the cash line on the balance sheet, the statement stands. Under US GAAP, interest paid ₹6L and interest received ₹3L would both sit in operating instead.</div>` : ""}
+          ${complete ? `<div class="feedback" style="margin-top:12px">Closing cash $${close}0,000. If this matches the cash line on the balance sheet, the statement stands. IFRS contrast: interest paid and interest received could be moved out of operating with a consistent policy.</div>` : ""}
         </div>
       </div>`;
   }
@@ -672,8 +667,8 @@
   function drillView() {
     const card = CFS.flash[state.flashI];
     return `
-      <span class="kicker">AS-3 para drill ${state.flashI + 1} / ${CFS.flash.length}</span>
-      <h2>Quote the standard, then flip</h2>
+      <span class="kicker">ASC 230 drill ${state.flashI + 1} / ${CFS.flash.length}</span>
+      <h2>Quote the rule, then flip</h2>
       <button class="flash" id="flip-card" type="button">
         <div class="tag">${state.flashShow ? "ANSWER" : "PROMPT"}</div>
         <p>${state.flashShow ? card.b : card.f}</p>
@@ -722,7 +717,7 @@
     return `
       <span class="kicker">Resource desk</span>
       <h2>Read the source, then play</h2>
-      <p class="lede">These are the live ICAI / MCA / IMA pages the studio is built from. Open a PDF, come back, and try the same idea in the film or the buckets. Not a substitute for BoS study material.</p>
+      <p class="lede">These are the live IMA / FASB / COSO / SEC pages the studio is built from. Open a PDF, come back, and try the same idea in the film or the buckets. Not a substitute for the CMA Handbook or CSO.</p>
       <section class="modes">${cards}</section>`;
   }
 
@@ -793,32 +788,32 @@
     const flash = (t && t.flash) || [];
     if (quiz.length) return { quiz, flash };
     const p = state.pack;
-    const ca = (p.papers.ca && p.papers.ca[0]) || "the matching CA Intermediate chapter";
-    const cma = (p.papers.cma && p.papers.cma[0]) || "the matching US CMA outline area";
+    const p1 = (p.papers.p1 && p.papers.p1[0]) || "Part 1 — check the IMA Content Specification Outline";
+    const p2 = (p.papers.p2 && p.papers.p2[0]) || "Part 2 — check the IMA Content Specification Outline";
     return {
       flash,
       quiz: [
         {
-          q: `You searched “${p.query}”. Where should a CA Intermediate student open the book first?`,
+          q: `You searched “${p.query}”. Where should a US CMA candidate open the outline first?`,
           opts: [
-            ca,
-            "Skip ICAI and only watch random reels",
-            "It is never tested in CA Intermediate",
-            "Only in the income-tax return utility",
+            p1,
+            "Skip IMA and only watch random reels",
+            "It is never tested on the CMA exam",
+            "Only on the US individual tax return (Form 1040)",
           ],
           a: 0,
-          explain: `Start with ${ca}. Then use the “All CA + CMA links” tab for ICAI study material, RTP and MTP.`,
+          explain: `Start with ${p1}. Then use the “All US CMA resources” tab for IMA CSO, LOS, handbook, FASB, SEC and review-course searches.`,
         },
         {
-          q: `The same topic on the US CMA side is closest to:`,
+          q: `If this topic also shows up on Part 2, the closest CSO bucket is:`,
           opts: [
-            cma,
-            "Indian GST returns only",
-            "Companies Act board-meeting quorum only",
-            "It is never in CMA",
+            p2,
+            "The IMA ethics statement only — never elsewhere",
+            "SOX Section 404 only, with no CSO mapping",
+            "It is never in CMA Part 2",
           ],
           a: 0,
-          explain: `US CMA maps this to ${cma}. Open the IMA / CMA cards on the links tab — do not mix Indian GST rules into the US paper unless the question is Indian tax.`,
+          explain: `The studio maps this to ${p2}. Open the IMA / FASB / COSO cards on the links tab.`,
         },
       ],
     };
@@ -826,19 +821,19 @@
 
   function packView() {
     if (state.busy && !state.pack) {
-      return `<p class="lede">Searching CA and US CMA resources…</p>`;
+      return `<p class="lede">Searching US CMA resources (IMA, FASB, SEC, COSO)…</p>`;
     }
     const p = state.pack;
     const topic = p.topic;
     const title = topic ? topic.title : p.query;
-    const ca = (p.papers.ca || []).map((x) => `<li>${x}</li>`).join("");
-    const cma = (p.papers.cma || []).map((x) => `<li>${x}</li>`).join("");
+    const p1 = (p.papers.p1 || []).map((x) => `<li>${x}</li>`).join("");
+    const p2 = (p.papers.p2 || []).map((x) => `<li>${x}</li>`).join("");
     const also = (p.also || [])
       .map((t) => `<button class="chip-topic" data-q="${t.title}" type="button">${t.title}</button>`)
       .join("");
     const tabs = ["teach", "flash", "quiz", "links"]
       .map((k) => {
-        const label = { teach: "Explain", flash: "Flashcards", quiz: "Quiz", links: "All CA + CMA links" }[k];
+        const label = { teach: "Explain", flash: "Flashcards", quiz: "Quiz", links: "All US CMA resources" }[k];
         return `<button class="btn ${state.packTab === k ? "primary" : "ghost"}" data-tab="${k}" type="button">${label}</button>`;
       })
       .join("");
@@ -853,10 +848,10 @@
     return `
       <span class="kicker">${p.fileHint ? "From your file · " + p.fileHint : "Study pack"}</span>
       <h2>${title}</h2>
-      <p class="lede">${topic ? topic.blurb : "No built-in lesson for this exact title yet — papers are guessed from the words, and every official CA / CMA search below is live."}</p>
+      <p class="lede">${topic ? topic.blurb : "No built-in lesson for this exact title yet — the 2024 IMA outline is guessed from the words, and every official US CMA search below is live."}</p>
       <div class="papers">
-        <div class="bucket op"><h3>CA Intermediate</h3><ul class="plain">${ca}</ul></div>
-        <div class="bucket inv"><h3>US CMA</h3><ul class="plain">${cma}</ul></div>
+        <div class="bucket op"><h3>CMA Part 1</h3><ul class="plain">${p1 || "<li>Check the IMA CSO</li>"}</ul></div>
+        <div class="bucket inv"><h3>CMA Part 2</h3><ul class="plain">${p2 || "<li>Check the IMA CSO</li>"}</ul></div>
       </div>
       ${studio}
       ${also ? `<p class="note" style="margin-top:16px">Nearby topics</p><div class="topic-chips">${also}</div>` : ""}
@@ -879,11 +874,11 @@
           </a>`
         )
         .join("");
-      return `<p class="note">Each card opens a search already aimed at ICAI, IMA, RTP/MTP, MCA, tax portals or YouTube. Your friend only clicks.</p><section class="modes">${cards}</section>`;
+      return `<p class="note">Each card opens a live search aimed at IMA, the 2024 CSO/LOS, the handbook, FASB, SEC EDGAR, COSO, IFRS vs GAAP, Gleim/Wiley/Surgent/HOCK, and YouTube. Your friend only clicks.</p><section class="modes">${cards}</section>`;
     }
     if (state.packTab === "flash") {
       const cards = bank.flash;
-      if (!cards.length) return `<p class="lede">No flashcards baked in for this topic yet. Open “All CA + CMA links” and use ICAI SM / IMA outline. Or pick a nearby topic chip.</p>`;
+      if (!cards.length) return `<p class="lede">No flashcards baked in for this topic yet. Open “All US CMA resources” and use the IMA outline. Or pick a nearby topic chip.</p>`;
       const card = cards[state.packFlashI % cards.length];
       return `
         <span class="kicker">${(state.packFlashI % cards.length) + 1} / ${cards.length}</span>
@@ -898,7 +893,7 @@
     }
     if (state.packTab === "quiz") {
       const qs = bank.quiz;
-      if (!qs.length) return `<p class="lede">No quiz bank for this title yet. Use RTP/MTP links in the last tab — those are the real ICAI questions.</p>`;
+      if (!qs.length) return `<p class="lede">No quiz bank for this title yet. Use the practice MCQ and essay searches in the last tab — those pull US CMA review sources.</p>`;
       if (state.packQuizI >= qs.length) {
         state.packQuizScore = scoreOf(state.packQuizAnswers, qs);
         return `<div class="ending"><div class="score-big">${state.packQuizScore}/${qs.length}</div>
@@ -928,18 +923,22 @@
       </div>`;
     }
     const notes = ((topic && topic.notes) || []).map((n) => `<li>${n}</li>`).join("");
+    const related = ((state.wiki && state.wiki.related) || [])
+      .map((r) => `<a class="chip-topic" href="${r.url}" target="_blank" rel="noopener">${r.title}</a>`)
+      .join("");
     const wiki = state.wiki
       ? `<div class="cheat" style="margin-top:22px"><span class="kicker">Plain-English snapshot (Wikipedia)</span>
           <h2 style="font-size:28px;margin:8px 0 10px">${state.wiki.title}</h2>
           <p class="note">${state.wiki.extract || ""}</p>
           ${state.wiki.url ? `<p><a class="btn" href="${state.wiki.url}" target="_blank" rel="noopener">Read more</a></p>` : ""}
-          <p class="note">Wikipedia is a start, not an ICAI module. Use the links tab for BoS / IMA.</p>
+          ${related ? `<p class="note" style="margin-top:12px">Related pages</p><div class="topic-chips">${related}</div>` : ""}
+          <p class="note">Wikipedia is a start, not the CMA exam. Use the links tab for IMA CSO / LOS / FASB.</p>
         </div>`
       : state.busy
         ? `<p class="note">Fetching a plain-English snapshot…</p>`
         : "";
     return `
-      ${notes ? `<ul class="teach">${notes}</ul>` : `<p class="lede">Use the links tab — it already searched ICAI, RTP, MTP, IMA and YouTube for “${p.query}”.</p>`}
+      ${notes ? `<ul class="teach">${notes}</ul>` : `<p class="lede">Use the links tab — it already searched IMA, FASB, SEC, COSO, review courses and YouTube for “${p.query}”.</p>`}
       ${wiki}`;
   }
 
@@ -1009,7 +1008,7 @@
     } else if (state.view === "lab") {
       mount(labView());
       bindLab();
-    }     else if (state.view === "quiz") {
+    } else if (state.view === "quiz") {
       mount(quizView());
       bindQuiz();
     } else if (state.view === "drill") {

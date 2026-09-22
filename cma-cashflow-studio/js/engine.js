@@ -7,14 +7,16 @@ window.Engine = {
   },
 
   tokens(s) {
-    const stop = new Set("the a an of and or for to in on with from by as is are was be this that which who your you our their it its at into about over under exam paper ca cma us icai ima study notes chapter unit".split(" "));
+    const stop = new Set(
+      "the a an of and or for to in on with from by as is are was be this that which who your you our their it its at into about over under exam part section cma us ima study notes chapter unit".split(" ")
+    );
     return this.norm(s)
       .split(" ")
       .filter((w) => w.length > 2 && !stop.has(w));
   },
 
   score(topic, q) {
-    const hay = this.norm(topic.title + " " + topic.keys + " " + (topic.blurb || ""));
+    const hay = this.norm(topic.title + " " + topic.keys + " " + (topic.blurb || "") + " " + (topic.part || ""));
     const t = this.tokens(q);
     if (!t.length) return 0;
     let s = 0;
@@ -27,86 +29,213 @@ window.Engine = {
   },
 
   search(q) {
-    const scored = TOPICS.map((topic) => ({ topic, s: this.score(topic, q) }))
+    return TOPICS.map((topic) => ({ topic, s: this.score(topic, q) }))
       .filter((x) => x.s > 0)
       .sort((a, b) => b.s - a.s);
-    return scored;
   },
 
-  guessPapers(q) {
+  guessPart(q) {
     const n = this.norm(q);
-    const ca = [];
-    const cma = [];
     const hit = (re) => re.test(n);
-    if (hit(/gst|igst|cgst|supply|hsn|eway/)) ca.push("CA Inter Paper 3B · GST");
-    if (hit(/income tax|salary|house property|pgbp|capital gain|80c|tds/)) ca.push("CA Inter Paper 3A · Income-tax");
-    if (hit(/audit|sa [0-9]|vouch|assertion|internal control|coso/)) {
-      ca.push("CA Inter Paper 5 · Auditing and Ethics");
-      cma.push("US CMA Part 1 · Internal controls");
+    const p1 = [];
+    const p2 = [];
+    if (hit(/cash flow|revenue|asc 606|gaap|ifrs|balance sheet|income statement|oci|lease|inventory|lifo/))
+      p1.push("Part 1 · A. External financial reporting decisions (15%)");
+    if (hit(/budget|forecast|regression|learning curve|pro forma|rolling|zero based/))
+      p1.push("Part 1 · B. Planning, budgeting, and forecasting (20%)");
+    if (hit(/variance|standard cost|roi|residual|balanced scorecard|transfer pric|responsibility/))
+      p1.push("Part 1 · C. Performance management (20%)");
+    if (hit(/abc|absorption|variable cost|job order|overhead|lean|quality cost|joint product/))
+      p1.push("Part 1 · D. Cost management (15%)");
+    if (hit(/coso|internal control|sox|segregation|itgc|governance/))
+      p1.push("Part 1 · E. Internal controls (15%)");
+    if (hit(/analytic|erp|data govern|visualization|sdlc|prescriptive|descriptive/))
+      p1.push("Part 1 · F. Technology and analytics (15%)");
+    if (hit(/ratio|common size|dupont|earnings quality|horizontal|liquidity|leverage/))
+      p2.push("Part 2 · A. Financial statement analysis (20%)");
+    if (hit(/wacc|capm|working capital|dividend|bond|ipo|beta|currency exposure|merger/))
+      p2.push("Part 2 · B. Corporate finance (20%)");
+    if (hit(/cvp|break even|make or buy|special order|target cost|sunk|contribution/))
+      p2.push("Part 2 · C. Business decision analysis (25%)");
+    if (hit(/erm|enterprise risk|hedge|mitigat/)) p2.push("Part 2 · D. Enterprise risk management (10%)");
+    if (hit(/npv|irr|payback|capital budget|sensitivity/)) p2.push("Part 2 · E. Capital investment decisions (10%)");
+    if (hit(/ethic|ima statement|fraud triangle|confidential|integrity|credibility/))
+      p2.push("Part 2 · F. Professional ethics (15%)");
+    if (!p1.length && !p2.length) {
+      p1.push("Part 1 — check the IMA Content Specification Outline");
+      p2.push("Part 2 — check the IMA Content Specification Outline");
     }
-    if (hit(/cost|variance|budget|marginal|process|overhead|labour|material|cvp|standard/)) {
-      ca.push("CA Inter Paper 4 · Cost & Management Accounting");
-      cma.push("US CMA Part 1 · Cost / performance / budgeting");
-    }
-    if (hit(/ratio|working capital|npv|irr|wacc|leverage|capital budget|receivable|dividend policy|bond/)) {
-      ca.push("CA Inter Paper 6A · Financial Management");
-      cma.push("US CMA Part 2 · Corporate finance / FSA / investments");
-    }
-    if (hit(/strateg|porter|swot|balanced scorecard|bcg|ansoff/)) {
-      ca.push("CA Inter Paper 6B · Strategic Management");
-      cma.push("US CMA · performance / strategy measures");
-    }
-    if (hit(/compan(y|ies) act|director|prospectus|share capital|debenture|meeting|nclt/)) ca.push("CA Inter Paper 2 · Corporate and Other Laws");
-    if (hit(/as[- ]?\d|ind as|account|revenue|ppe|depreciat|inventor|consolida|amalgam|partnership|cash flow|gaap|ifrs|lease/)) {
-      ca.push("CA Inter Paper 1 · Advanced Accounting");
-      cma.push("US CMA Part 1 · External financial reporting");
-    }
-    if (hit(/ethic|independence|confidential/)) {
-      ca.push("CA Inter Paper 5 · Ethics");
-      cma.push("US CMA · IMA Statement of Ethical Professional Practice");
-    }
-    if (hit(/analytic|big data|dashboard|predictive/)) cma.push("US CMA Part 1 · Technology and analytics");
-    if (!ca.length) ca.push("CA Intermediate — check Paper 1–6 index in BoS study material");
-    if (!cma.length) cma.push("US CMA Part 1 or 2 — search the IMA content specification outline");
-    return { ca: [...new Set(ca)], cma: [...new Set(cma)] };
+    return { p1: [...new Set(p1)], p2: [...new Set(p2)] };
   },
 
   portals(q) {
     const e = encodeURIComponent(q);
-    const ca = encodeURIComponent("CA Intermediate " + q);
     const cma = encodeURIComponent("US CMA " + q);
+    const ima = encodeURIComponent("IMA CMA " + q);
     return [
-      { tag: "CA · ICAI", t: "ICAI website search", d: "Official institute pages, announcements, BoS.", href: "https://www.google.com/search?q=site%3Aicai.org+" + e },
-      { tag: "CA · BoS", t: "Intermediate course page", d: "Start here for the latest study material edition.", href: "https://www.icai.org/post/intermediate-course" },
-      { tag: "CA · SM", t: "Google: ICAI study material + topic", d: "Finds BoS PDFs and RTP/MTP mentions.", href: "https://www.google.com/search?q=" + encodeURIComponent("ICAI study material " + q) },
-      { tag: "CA · RTP", t: "Revision Test Papers", d: "site:icai.org RTP + your topic.", href: "https://www.google.com/search?q=" + encodeURIComponent("site:icai.org RTP " + q) },
-      { tag: "CA · MTP", t: "Mock Test Papers", d: "site:icai.org MTP + your topic.", href: "https://www.google.com/search?q=" + encodeURIComponent("site:icai.org MTP " + q) },
-      { tag: "CA · AS", t: "Accounting standards", d: "AS / Ind AS text on ICAI and MCA.", href: "https://www.google.com/search?q=" + encodeURIComponent("site:icai.org accounting standard " + q) },
-      { tag: "CA · video", t: "YouTube · CA Intermediate", d: "Class lectures. Prefer BoS / ICAI first.", href: "https://www.youtube.com/results?search_query=" + ca },
-      { tag: "CMA · IMA", t: "IMA / CMA search", d: "Official US CMA body.", href: "https://www.google.com/search?q=site%3Aimanet.org+CMA+" + e },
-      { tag: "CMA · outline", t: "CMA content specification", d: "What Part 1 vs Part 2 actually tests.", href: "https://www.google.com/search?q=" + encodeURIComponent("IMA CMA content specification outline " + q) },
-      { tag: "CMA · video", t: "YouTube · US CMA", d: "Part 1 / Part 2 lectures on this topic.", href: "https://www.youtube.com/results?search_query=" + cma },
-      { tag: "Law", t: "MCA / Companies Act / Ind AS", d: "Ministry of Corporate Affairs.", href: "https://www.google.com/search?q=site%3Amca.gov.in+" + e },
-      { tag: "Tax", t: "Income Tax India + GST", d: "Official tax portals plus topic search.", href: "https://www.google.com/search?q=" + encodeURIComponent(q + " site:incometax.gov.in OR site:gst.gov.in") },
-      { tag: "Both", t: "Google everything", d: "CA Intermediate and US CMA in one sweep.", href: "https://www.google.com/search?q=" + encodeURIComponent(q + " CA Intermediate OR US CMA") },
+      {
+        tag: "IMA",
+        t: "IMA — CMA certification",
+        d: "Official US CMA body: exam, handbook, membership.",
+        href: "https://www.imanet.org/cma-certification",
+      },
+      {
+        tag: "IMA",
+        t: "IMA — CMA exam support",
+        d: "Windows, scoring, and candidate FAQs.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("site:imanet.org CMA exam support " + q),
+      },
+      {
+        tag: "CSO",
+        t: "2024 Content Specification Outline (PDF)",
+        d: "What Part 1 and Part 2 actually test, with weights.",
+        href: "https://www.imanet.org/-/media/IMA/Files/Home/IMA-Certifications/CMA-Certification/2024-CMA-Content-Specification-Outlines-Final.ashx",
+      },
+      {
+        tag: "LOS",
+        t: "2024 Learning Outcome Statements (PDF)",
+        d: "The detailed ‘candidate should be able to’ list.",
+        href: "https://www.imanet.org/-/media/IMA/Files/Home/IMA-Certifications/CMA-Certification/2024-CMA-Learning-Outcome-Statement-Final.ashx",
+      },
+      {
+        tag: "Handbook",
+        t: "CMA Handbook",
+        d: "Windows, MCQ + essay format, GAAP/IFRS policy.",
+        href: "https://www.imanet.org/-/media/IMA/Files/Home/IMA-Certifications/CMA-Certification/CMA-Handbook-3132024.ashx",
+      },
+      {
+        tag: "Ethics",
+        t: "IMA Statement of Ethical Professional Practice",
+        d: "Competence, confidentiality, integrity, credibility.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("IMA Statement of Ethical Professional Practice PDF"),
+      },
+      {
+        tag: "IMA search",
+        t: "Search imanet.org",
+        d: "Articles, insights, and CMA pages on this topic.",
+        href: "https://www.google.com/search?q=site%3Aimanet.org+CMA+" + e,
+      },
+      {
+        tag: "FASB",
+        t: "FASB Accounting Standards Codification",
+        d: "US GAAP source (ASC 230, 606, 842…).",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("FASB ASC " + q),
+      },
+      {
+        tag: "SEC",
+        t: "SEC / EDGAR + topic",
+        d: "How real filers present the item.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("site:sec.gov " + q),
+      },
+      {
+        tag: "COSO",
+        t: "COSO internal control / ERM",
+        d: "Framework behind Part 1 controls and Part 2 ERM.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("COSO " + q),
+      },
+      {
+        tag: "IFRS",
+        t: "IFRS vs US GAAP on this topic",
+        d: "CMA tests major differences.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("IFRS vs US GAAP " + q + " CMA"),
+      },
+      {
+        tag: "Practice",
+        t: "Google: US CMA MCQ + topic",
+        d: "Practice questions from reputable review providers.",
+        href: "https://www.google.com/search?q=" + cma + "+multiple+choice",
+      },
+      {
+        tag: "Video",
+        t: "YouTube · US CMA",
+        d: "Part 1 / Part 2 lectures on this topic.",
+        href: "https://www.youtube.com/results?search_query=" + cma,
+      },
+      {
+        tag: "Video",
+        t: "YouTube · IMA wording",
+        d: "Search the official name plus the topic.",
+        href: "https://www.youtube.com/results?search_query=" + ima,
+      },
+      {
+        tag: "Strategic Finance",
+        t: "IMA Strategic Finance magazine",
+        d: "Practitioner articles tagged to this topic.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("site:sfmagazine.com " + q),
+      },
+      {
+        tag: "Gleim",
+        t: "Gleim CMA review",
+        d: "Major CMA review provider search.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("Gleim CMA " + q),
+      },
+      {
+        tag: "Wiley",
+        t: "Wiley CMA Excel",
+        d: "Wiley / Efficient Learning CMA materials.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("Wiley CMA " + q),
+      },
+      {
+        tag: "Surgent",
+        t: "Surgent CMA Review",
+        d: "Adaptive CMA review search.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("Surgent CMA " + q),
+      },
+      {
+        tag: "Hock",
+        t: "HOCK CMA",
+        d: "HOCK International CMA textbooks and questions.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("HOCK CMA " + q),
+      },
+      {
+        tag: "Becker",
+        t: "Becker CMA",
+        d: "Becker CMA exam review search.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("Becker CMA " + q),
+      },
+      {
+        tag: "Web",
+        t: "Investopedia / explainer",
+        d: "Plain-English first pass, then return to IMA.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent(q + " accounting Investopedia"),
+      },
+      {
+        tag: "Essay",
+        t: "CMA essay / constructed response",
+        d: "Part 1 and Part 2 essay-style practice on this topic.",
+        href: "https://www.google.com/search?q=" + encodeURIComponent("CMA essay question " + q),
+      },
+      {
+        tag: "All",
+        t: "Google everything US CMA",
+        d: "Wide net: IMA, review courses, articles.",
+        href: "https://www.google.com/search?q=" + cma,
+      },
     ];
   },
 
   async wiki(q) {
     try {
       const sRes = await fetch(
-        "https://en.wikipedia.org/w/api.php?action=opensearch&limit=1&namespace=0&origin=*&search=" + encodeURIComponent(q)
+        "https://en.wikipedia.org/w/api.php?action=opensearch&limit=5&namespace=0&origin=*&search=" +
+          encodeURIComponent(q + " accounting")
       );
       const s = await sRes.json();
-      const title = s[1] && s[1][0];
-      if (!title) return null;
-      const sumRes = await fetch("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title));
-      if (!sumRes.ok) return null;
-      const sum = await sumRes.json();
+      const titles = s[1] || [];
+      if (!titles.length) return { extract: null, related: [] };
+      const sumRes = await fetch(
+        "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(titles[0])
+      );
+      const sum = sumRes.ok ? await sumRes.json() : {};
+      const related = titles.slice(0, 5).map((t, i) => ({
+        title: t,
+        url: (s[3] && s[3][i]) || "https://en.wikipedia.org/wiki/" + encodeURIComponent(t),
+      }));
       return {
-        title: sum.title,
-        extract: sum.extract,
+        title: sum.title || titles[0],
+        extract: sum.extract || "",
         url: sum.content_urls && sum.content_urls.desktop && sum.content_urls.desktop.page,
+        related,
       };
     } catch (err) {
       return null;
@@ -116,13 +245,19 @@ window.Engine = {
   packFromQuery(q, fileHint) {
     const hits = this.search(q);
     const best = hits[0] && hits[0].s >= 3 ? hits[0].topic : null;
-    const papers = best ? { ca: [best.ca], cma: [best.cma] } : this.guessPapers(q);
+    const parts = this.guessPart(q);
+    if (best) {
+      if (/^Part 1/.test(best.part)) parts.p1.unshift(best.part);
+      else parts.p2.unshift(best.part);
+      parts.p1 = [...new Set(parts.p1)];
+      parts.p2 = [...new Set(parts.p2)];
+    }
     return {
       query: q,
       fileHint: fileHint || "",
       topic: best,
       also: hits.slice(1, 4).map((h) => h.topic),
-      papers,
+      papers: parts,
       portals: this.portals(q),
     };
   },

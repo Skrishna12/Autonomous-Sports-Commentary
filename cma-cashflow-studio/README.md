@@ -1,15 +1,17 @@
-# CA + US CMA Studio
+# US CMA Studio
 
-For a CA Intermediate student moving to US CMA. **No tech skills needed.**
+Interactive study desk for the **US Certified Management Accountant** exam (IMA). **No tech skills needed.**
 
 ## Play (send this link)
 
 https://raw.githack.com/Skrishna12/Autonomous-Sports-Commentary/cursor/cma-cashflow-studio-ba37/cma-cashflow-studio/index.html
 
-1. Type the topic (GST, ratios, cash flow, ethics…).
+Mirror: https://cdn.jsdelivr.net/gh/Skrishna12/Autonomous-Sports-Commentary@cursor/cma-cashflow-studio-ba37/cma-cashflow-studio/index.html
+
+1. Type a CMA topic (cash flow, COSO, WACC, ethics, NPV…).
 2. Or upload class notes / a PDF.
-3. Click **All CA + CMA links** — ICAI, RTP, MTP, IMA, YouTube, MCA, tax portals.
+3. Open **All US CMA resources** — IMA certification, 2024 CSO, LOS, handbook, ethics, FASB, SEC, COSO, IFRS vs GAAP, practice MCQs, YouTube, and a Wikipedia snapshot.
 
-Cash flow still has the full film / game / lab.
+Cash flow still has the film, classification game, statement lab, and quiz (US GAAP first; IFRS toggle only as a CMA contrast).
 
-Study aid only — ICAI BoS and IMA outlines remain the source of truth.
+Study aid only — IMA Content Specification Outline, Learning Outcome Statements, and the CMA Handbook remain the source of truth.
