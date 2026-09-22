@@ -405,11 +405,7 @@ h2 { font-size: clamp(28px, 4vw, 44px); }
 }
 .opt.correct { border-color: var(--teal); background: rgba(110,231,197,.1); }
 .opt.incorrect { border-color: var(--rose); background: rgba(240,113,120,.1); }
-.why-box {
-  margin-top: 16px;
-  font-size: 16px;
-  line-height: 1.5;
-}
+.quiz-nav { margin-top: 16px; }
 .why-box strong { display: inline; margin-right: 6px; }
 .right-ans { color: var(--teal); font-weight: 600; }
 

@@ -16,6 +16,7 @@
     quizI: 0,
     quizPicked: null,
     quizScore: 0,
+    quizAnswers: [],
     flashI: 0,
     flashShow: false,
     query: "",
@@ -26,6 +27,7 @@
     packQuizI: 0,
     packQuizPicked: null,
     packQuizScore: 0,
+    packQuizAnswers: [],
     packFlashI: 0,
     packFlashShow: false,
     fileHint: "",
@@ -46,8 +48,10 @@
       filmFb: state.filmFb,
       quizI: state.quizI,
       quizPicked: state.quizPicked,
+      quizAnswers: state.quizAnswers.slice(),
       packQuizI: state.packQuizI,
       packQuizPicked: state.packQuizPicked,
+      packQuizAnswers: state.packQuizAnswers.slice(),
       packFlashI: state.packFlashI,
       packFlashShow: state.packFlashShow,
       flashI: state.flashI,
@@ -94,6 +98,7 @@
       state.quizI = 0;
       state.quizPicked = null;
       state.quizScore = 0;
+      state.quizAnswers = [];
     }
     if (view === "drill") {
       state.flashI = 0;
@@ -113,13 +118,13 @@
       }
       if (state.view === "quiz" && state.quizI > 0) {
         state.quizI -= 1;
-        state.quizPicked = null;
+        state.quizPicked = state.quizAnswers[state.quizI] ?? null;
         render();
         return;
       }
       if (state.view === "pack" && state.packTab === "quiz" && state.packQuizI > 0) {
         state.packQuizI -= 1;
-        state.packQuizPicked = null;
+        state.packQuizPicked = state.packQuizAnswers[state.packQuizI] ?? null;
         render();
         return;
       }
@@ -240,6 +245,7 @@
           state.packQuizI = 0;
           state.packQuizPicked = null;
           state.packQuizScore = 0;
+          state.packQuizAnswers = [];
         }
         if (state.packTab === "flash") {
           state.packFlashI = 0;
@@ -576,23 +582,42 @@
     return `<div class="feedback wrong why-box"><strong>Wrong.</strong> Right answer: <span class="right-ans">${right}</span>. ${item.explain}</div>`;
   }
 
+  function quizNav(i, total, picked, prevId, nextId) {
+    const prev =
+      i > 0
+        ? `<button class="btn" id="${prevId}" type="button">← Previous question</button>`
+        : "";
+    const next =
+      picked !== null
+        ? `<button class="btn primary" id="${nextId}" type="button">${i + 1 >= total ? "See the score" : "Next question"}</button>`
+        : "";
+    if (!prev && !next) return "";
+    return `<div class="actions quiz-nav">${prev}${next}</div>`;
+  }
+
+  function scoreOf(answers, bank) {
+    return bank.reduce((n, q, i) => n + (answers[i] === q.a ? 1 : 0), 0);
+  }
+
   function quizView() {
-    if (state.quizI >= CFS.quiz.length) {
-      const pct = Math.round((state.quizScore / CFS.quiz.length) * 100);
+    const bank = CFS.quiz;
+    state.quizScore = scoreOf(state.quizAnswers, bank);
+    if (state.quizI >= bank.length) {
+      const pct = Math.round((state.quizScore / bank.length) * 100);
       const badge = pct === 100 ? "Distinction" : pct >= 70 ? "Pass with heat" : "Re-sit recommended";
       return `
         <div class="ending">
           <div class="badge">${badge}</div>
-          <div class="score-big">${state.quizScore}/${CFS.quiz.length}</div>
+          <div class="score-big">${state.quizScore}/${bank.length}</div>
           <h2>The night’s paper</h2>
           <p class="lede" style="margin:12px auto">Cash flow is a story about timing. Replay the film or flip the standard and try the buckets again.</p>
-          <div class="actions" style="justify-content:center">
+          <div class="actions quiz-nav" style="justify-content:center">
+            <button class="btn" id="prev-q" type="button">← Previous question</button>
             <button class="btn primary" data-go="quiz" type="button">Sit again</button>
-            <button class="btn" data-back type="button">Back</button>
           </div>
         </div>`;
     }
-    const item = CFS.quiz[state.quizI];
+    const item = bank[state.quizI];
     const picked = state.quizPicked;
     const opts = item.opts
       .map((o, i) => {
@@ -606,10 +631,11 @@
       .join("");
     return `
       <div class="quiz">
-        <span class="kicker">Question ${state.quizI + 1} / ${CFS.quiz.length}</span>
+        <span class="kicker">Question ${state.quizI + 1} / ${bank.length}</span>
         <h2 class="q">${item.q}</h2>
         <div class="options">${opts}</div>
-        ${picked !== null ? `${quizFeedback(item, picked)}<div class="actions"><button class="btn primary" id="next-q" type="button">${state.quizI + 1 === CFS.quiz.length ? "See the score" : "Next question"}</button></div>` : ""}
+        ${picked !== null ? quizFeedback(item, picked) : ""}
+        ${quizNav(state.quizI, bank.length, picked, "prev-q", "next-q")}
       </div>`;
   }
 
@@ -618,11 +644,11 @@
       b.addEventListener("click", () => {
         if (state.quizPicked !== null) return;
         const i = Number(b.getAttribute("data-opt"));
+        const first = state.quizAnswers[state.quizI] === undefined;
         state.quizPicked = i;
-        if (i === CFS.quiz[state.quizI].a) {
-          state.quizScore += 1;
-          addXp(8);
-        }
+        state.quizAnswers[state.quizI] = i;
+        if (first && i === CFS.quiz[state.quizI].a) addXp(8);
+        state.quizScore = scoreOf(state.quizAnswers, CFS.quiz);
         render();
       })
     );
@@ -630,7 +656,15 @@
     if (n)
       n.addEventListener("click", () => {
         state.quizI += 1;
-        state.quizPicked = null;
+        state.quizPicked = state.quizAnswers[state.quizI] ?? null;
+        render();
+      });
+    const p = $("#prev-q");
+    if (p)
+      p.addEventListener("click", () => {
+        if (state.quizI >= CFS.quiz.length) state.quizI = CFS.quiz.length - 1;
+        else state.quizI -= 1;
+        state.quizPicked = state.quizAnswers[state.quizI] ?? null;
         render();
       });
   }
@@ -866,8 +900,12 @@
       const qs = bank.quiz;
       if (!qs.length) return `<p class="lede">No quiz bank for this title yet. Use RTP/MTP links in the last tab — those are the real ICAI questions.</p>`;
       if (state.packQuizI >= qs.length) {
+        state.packQuizScore = scoreOf(state.packQuizAnswers, qs);
         return `<div class="ending"><div class="score-big">${state.packQuizScore}/${qs.length}</div>
-          <div class="actions" style="justify-content:center"><button class="btn primary" data-tab="quiz" type="button">Again</button></div></div>`;
+          <div class="actions quiz-nav" style="justify-content:center">
+            <button class="btn" id="pack-prev-q" type="button">← Previous question</button>
+            <button class="btn primary" data-tab="quiz" type="button">Again</button>
+          </div></div>`;
       }
       const item = qs[state.packQuizI];
       const picked = state.packQuizPicked;
@@ -885,7 +923,8 @@
         <span class="kicker">Question ${state.packQuizI + 1} / ${qs.length}</span>
         <h2 class="q">${item.q}</h2>
         <div class="options">${opts}</div>
-        ${picked !== null ? `${quizFeedback(item, picked)}<div class="actions"><button class="btn primary" id="pack-next-q" type="button">${state.packQuizI + 1 === qs.length ? "See the score" : "Next question"}</button></div>` : ""}
+        ${picked !== null ? quizFeedback(item, picked) : ""}
+        ${quizNav(state.packQuizI, qs.length, picked, "pack-prev-q", "pack-next-q")}
       </div>`;
     }
     const notes = ((topic && topic.notes) || []).map((n) => `<li>${n}</li>`).join("");
@@ -932,11 +971,12 @@
       b.addEventListener("click", () => {
         if (state.packQuizPicked !== null) return;
         const i = Number(b.getAttribute("data-pack-opt"));
+        const first = state.packQuizAnswers[state.packQuizI] === undefined;
         state.packQuizPicked = i;
-        if (i === packBank().quiz[state.packQuizI].a) {
-          state.packQuizScore += 1;
-          addXp(8);
-        }
+        state.packQuizAnswers[state.packQuizI] = i;
+        const bank = packBank().quiz;
+        if (first && i === bank[state.packQuizI].a) addXp(8);
+        state.packQuizScore = scoreOf(state.packQuizAnswers, bank);
         render();
       })
     );
@@ -944,7 +984,16 @@
     if (nq)
       nq.addEventListener("click", () => {
         state.packQuizI += 1;
-        state.packQuizPicked = null;
+        state.packQuizPicked = state.packQuizAnswers[state.packQuizI] ?? null;
+        render();
+      });
+    const pq = $("#pack-prev-q");
+    if (pq)
+      pq.addEventListener("click", () => {
+        const n = packBank().quiz.length;
+        if (state.packQuizI >= n) state.packQuizI = n - 1;
+        else state.packQuizI -= 1;
+        state.packQuizPicked = state.packQuizAnswers[state.packQuizI] ?? null;
         render();
       });
   }
