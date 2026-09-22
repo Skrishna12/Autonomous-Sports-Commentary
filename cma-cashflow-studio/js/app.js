@@ -572,10 +572,11 @@
 
   function quizFeedback(item, picked) {
     const right = item.opts[item.a];
+    const trap = item.traps && item.traps[picked] ? `<p class="trap">${item.traps[picked]}</p>` : "";
     if (picked === item.a) {
       return `<div class="feedback why-box"><strong>Correct.</strong> ${item.explain}</div>`;
     }
-    return `<div class="feedback wrong why-box"><strong>Wrong.</strong> Right answer: <span class="right-ans">${right}</span>. ${item.explain}</div>`;
+    return `<div class="feedback wrong why-box"><strong>Wrong.</strong> The right answer is <span class="right-ans">${right}</span>.${trap}<p>${item.explain}</p></div>`;
   }
 
   function quizNav(i, total, picked, prevId, nextId) {
@@ -784,9 +785,17 @@
 
   function packBank() {
     const t = state.pack && state.pack.topic;
-    if (t && t.studio === "cfs") return { quiz: CFS.quiz, flash: CFS.flash };
+    if (t && t.studio === "cfs") {
+      return {
+        quiz: (CFS.quiz && CFS.quiz.length >= 8 ? CFS.quiz : t.quiz) || CFS.quiz,
+        flash: (t.flash && t.flash.length ? t.flash.concat(CFS.flash.filter((c) => !t.flash.some((x) => x.f === c.f))) : CFS.flash),
+      };
+    }
     const quiz = (t && t.quiz) || [];
-    const flash = (t && t.flash) || [];
+    let flash = (t && t.flash) || [];
+    if (!flash.length && t && t.notes && t.notes.length) {
+      flash = t.notes.map((n, i) => ({ f: `${t.title} — remember this (${i + 1})`, b: n }));
+    }
     if (quiz.length) return { quiz, flash };
     const p = state.pack;
     const p1 = (p.papers.p1 && p.papers.p1[0]) || "Part 1 — check the IMA Content Specification Outline";
