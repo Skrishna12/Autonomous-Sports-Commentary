@@ -1,5 +1,34 @@
 (function () {
   const YOU = "Gowtham";
+  const RANKS = [
+    { min: 0, title: "CMA candidate", next: 40 },
+    { min: 40, title: "Warm-up complete", next: 90 },
+    { min: 90, title: "Part 1 spark", next: 160 },
+    { min: 160, title: "Part 1 fire", next: 250 },
+    { min: 250, title: "Part 2 ready", next: 400 },
+    { min: 400, title: "Controller of the night", next: 650 },
+    { min: 650, title: "CMA night owl", next: null },
+  ];
+
+  function loadStats() {
+    try {
+      const s = JSON.parse(localStorage.getItem("cfs-stats") || "{}");
+      return {
+        quizzes: Number(s.quizzes || 0),
+        correct: Number(s.correct || 0),
+        asked: Number(s.asked || 0),
+        bestPct: Number(s.bestPct || 0),
+        streak: Number(s.streak || 0),
+        bestStreak: Number(s.bestStreak || 0),
+        flashes: Number(s.flashes || 0),
+        files: Number(s.files || 0),
+        recent: Array.isArray(s.recent) ? s.recent.slice(0, 8) : [],
+      };
+    } catch (e) {
+      return { quizzes: 0, correct: 0, asked: 0, bestPct: 0, streak: 0, bestStreak: 0, flashes: 0, files: 0, recent: [] };
+    }
+  }
+
   const $ = (sel, el = document) => el.querySelector(sel);
   const app = $("#app");
   const state = {
@@ -8,6 +37,9 @@
       ? localStorage.getItem("cfs-std")
       : "usgaap",
     xp: Number(localStorage.getItem("cfs-xp") || 0),
+    stats: null,
+    quizLogged: false,
+    packQuizLogged: false,
     filmI: 0,
     filmNote: "Watch, then choose. Wrong answers still teach — they just pay less XP.",
     filmFb: null,
@@ -106,6 +138,7 @@
       state.quizPicked = null;
       state.quizScore = 0;
       state.quizAnswers = [];
+      state.quizLogged = false;
     }
     if (view === "drill") {
       state.flashI = 0;
@@ -175,6 +208,14 @@
   function save() {
     localStorage.setItem("cfs-xp", String(state.xp));
     localStorage.setItem("cfs-std", state.std);
+    try {
+      localStorage.setItem("cfs-stats", JSON.stringify(stats()));
+    } catch (e) {}
+  }
+
+  function stats() {
+    if (!state.stats) state.stats = loadStats();
+    return state.stats;
   }
 
   function addXp(n) {
@@ -182,15 +223,70 @@
     save();
   }
 
+  function rankInfo() {
+    let cur = RANKS[0];
+    RANKS.forEach((r) => {
+      if (state.xp >= r.min) cur = r;
+    });
+    const span = cur.next == null ? 1 : cur.next - cur.min;
+    const into = cur.next == null ? 1 : Math.min(span, Math.max(0, state.xp - cur.min));
+    const pct = Math.round((into / span) * 100);
+    return { ...cur, pct, toNext: cur.next == null ? 0 : Math.max(0, cur.next - state.xp) };
+  }
+
   function rank() {
-    if (state.xp >= 180) return YOU + " · controller of the night";
-    if (state.xp >= 110) return YOU + " · Part 2 ready";
-    if (state.xp >= 50) return YOU + " · Part 1 ready";
-    return YOU + " · CMA candidate";
+    return YOU + " · " + rankInfo().title;
+  }
+
+  function markAnswer(ok) {
+    const s = stats();
+    if (ok) {
+      s.streak += 1;
+      if (s.streak > s.bestStreak) s.bestStreak = s.streak;
+    } else {
+      s.streak = 0;
+    }
+    save();
+  }
+
+  function bumpFlash() {
+    stats().flashes += 1;
+    save();
+  }
+
+  function recordQuiz(title, correct, total) {
+    if (!total) return;
+    const s = stats();
+    s.quizzes += 1;
+    s.correct += correct;
+    s.asked += total;
+    const pct = Math.round((correct / total) * 100);
+    if (pct > s.bestPct) s.bestPct = pct;
+    s.recent.unshift({ title: title || "Quiz", correct, total, pct, at: Date.now() });
+    s.recent = s.recent.slice(0, 8);
+    if (pct === 100) addXp(20);
+    else if (pct >= 70) addXp(10);
+    else addXp(4);
+    save();
+  }
+
+  function badges() {
+    const s = stats();
+    const list = [
+      { id: "first", on: s.quizzes >= 1, t: "First paper", d: "Finish any quiz" },
+      { id: "heat", on: s.bestPct >= 70, t: "Pass with heat", d: "70% or better on a quiz" },
+      { id: "clean", on: s.bestPct >= 100, t: "Clean sheet", d: "100% on a quiz" },
+      { id: "streak", on: s.bestStreak >= 5, t: "On a roll", d: "5 correct in a row" },
+      { id: "notes", on: s.files >= 1, t: "Note eater", d: "Upload a study file" },
+      { id: "flip", on: s.flashes >= 10, t: "Card shark", d: "Flip 10 flashcards" },
+      { id: "xp50", on: state.xp >= 50, t: "50 pts", d: "Bank 50 points" },
+      { id: "xp200", on: state.xp >= 200, t: "200 pts", d: "Bank 200 points" },
+    ];
+    return list;
   }
 
   function topbar() {
-    const pct = Math.min(100, Math.round((state.xp / 200) * 100));
+    const info = rankInfo();
     const std = CFS.standards[state.std] || CFS.standards.usgaap;
     return `
       <div class="topbar">
@@ -202,8 +298,12 @@
           ${state.view !== "hub" ? `<button class="btn primary" data-back type="button">← Back</button>` : ""}
           <button class="btn ghost" data-go="hub" type="button">Home</button>
           <button class="btn ghost" data-std="${nextStd()}" type="button">${std.label}</button>
-          <span>${rank()} · ${state.xp} XP</span>
-          <div class="meter" aria-hidden="true"><span style="width:${pct}%"></span></div>
+          <button class="score-chip" data-go="profile" type="button" title="${YOU}’s profile">
+            <span class="avatar-g">G</span>
+            <span class="score-num">${state.xp}</span>
+            <span>pts</span>
+          </button>
+          <div class="meter" aria-hidden="true"><span style="width:${info.pct}%"></span></div>
         </div>
       </div>`;
   }
@@ -254,6 +354,7 @@
           state.packQuizPicked = null;
           state.packQuizScore = 0;
           state.packQuizAnswers = [];
+          state.packQuizLogged = false;
         }
         if (state.packTab === "flash") {
           state.packFlashI = 0;
@@ -316,6 +417,11 @@
         </div>
       </section>
       <section class="modes">
+        <button class="card score-card" data-go="profile" type="button">
+          <span class="tag">PROFILE</span>
+          <h3>${YOU} · ${state.xp} pts</h3>
+          <p>${rankInfo().title}${rankInfo().toNext ? " · " + rankInfo().toNext + " pts to the next rank" : " · top rank"}. Tap to see badges and quiz scores.</p>
+        </button>
         <button class="card" data-q="Cash flow statement" type="button">
           <span class="tag">FEATURED</span>
           <h3>Cash flow (game inside)</h3>
@@ -627,14 +733,19 @@
     if (state.quizI >= bank.length) {
       const pct = Math.round((state.quizScore / bank.length) * 100);
       const badge = pct === 100 ? "Distinction" : pct >= 70 ? "Pass with heat" : "Re-sit recommended";
+      if (!state.quizLogged) {
+        recordQuiz("Cash flow statement", state.quizScore, bank.length);
+        state.quizLogged = true;
+      }
       return `
         <div class="ending">
           <div class="badge">${badge}</div>
           <div class="score-big">${state.quizScore}/${bank.length}</div>
           <h2>${YOU}’s night paper</h2>
-          <p class="lede" style="margin:12px auto">Cash flow is a story about timing. Replay the film or flip the standard and try the buckets again.</p>
+          <p class="lede" style="margin:12px auto">${pct}% — saved on your profile (${state.xp} pts). Keep the streak at ${stats().streak}.</p>
           <div class="actions quiz-nav" style="justify-content:center">
             <button class="btn" id="prev-q" type="button">← Previous question</button>
+            <button class="btn" data-go="profile" type="button">See profile</button>
             <button class="btn primary" data-go="quiz" type="button">Sit again</button>
           </div>
         </div>`;
@@ -670,6 +781,7 @@
         state.quizPicked = i;
         state.quizAnswers[state.quizI] = i;
         if (first && i === CFS.quiz[state.quizI].a) addXp(8);
+        if (first) markAnswer(i === CFS.quiz[state.quizI].a);
         state.quizScore = scoreOf(state.quizAnswers, CFS.quiz);
         render();
       })
@@ -711,7 +823,10 @@
     if (flip)
       flip.addEventListener("click", () => {
         state.flashShow = !state.flashShow;
-        if (state.flashShow) addXp(2);
+        if (state.flashShow) {
+          addXp(2);
+          bumpFlash();
+        }
         render();
       });
     const n = $("#next-card");
@@ -843,6 +958,8 @@
         empty,
       };
       state.docFilter = "";
+      stats().files += 1;
+      addXp(6);
       await openPack(look, file.name);
       if (status && empty) {
         /* pack already shown */
@@ -997,9 +1114,19 @@
       if (!qs.length) return `<p class="lede">${state.doc ? "The file was read, but there was not enough text to build a quiz. Open Your document." : "No quiz bank for this title yet. Use the practice MCQ and essay searches in the last tab — those pull US CMA review sources."}</p>`;
       if (state.packQuizI >= qs.length) {
         state.packQuizScore = scoreOf(state.packQuizAnswers, qs);
-        return `<div class="ending"><div class="score-big">${state.packQuizScore}/${qs.length}</div>
+        if (!state.packQuizLogged) {
+          const label = (state.doc && state.doc.name) || (state.pack.topic && state.pack.topic.title) || state.query || "Quiz";
+          recordQuiz(label, state.packQuizScore, qs.length);
+          state.packQuizLogged = true;
+        }
+        const pct = Math.round((state.packQuizScore / qs.length) * 100);
+        return `<div class="ending">
+          <div class="badge">${pct === 100 ? "Clean sheet" : pct >= 70 ? "Pass with heat" : "Keep going"}</div>
+          <div class="score-big">${state.packQuizScore}/${qs.length}</div>
+          <p class="lede">${pct}% is now on ${YOU}’s profile · ${state.xp} pts</p>
           <div class="actions quiz-nav" style="justify-content:center">
             <button class="btn" id="pack-prev-q" type="button">← Previous question</button>
+            <button class="btn" data-go="profile" type="button">See profile</button>
             <button class="btn primary" data-tab="quiz" type="button">Again</button>
           </div></div>`;
       }
@@ -1099,7 +1226,10 @@
     if (flip)
       flip.addEventListener("click", () => {
         state.packFlashShow = !state.packFlashShow;
-        if (state.packFlashShow) addXp(2);
+        if (state.packFlashShow) {
+          addXp(2);
+          bumpFlash();
+        }
         render();
       });
     const nf = $("#pack-next-f");
@@ -1127,6 +1257,7 @@
         state.packQuizAnswers[state.packQuizI] = i;
         const bank = packBank().quiz;
         if (first && i === bank[state.packQuizI].a) addXp(8);
+        if (first) markAnswer(i === bank[state.packQuizI].a);
         state.packQuizScore = scoreOf(state.packQuizAnswers, bank);
         render();
       })
@@ -1149,6 +1280,53 @@
       });
   }
 
+  function profileView() {
+    const s = stats();
+    const info = rankInfo();
+    const acc = s.asked ? Math.round((s.correct / s.asked) * 100) : 0;
+    const recent = (s.recent || [])
+      .map((r) => {
+        const when = r.at ? new Date(r.at).toLocaleDateString() : "";
+        return `<li><b>${esc(r.title)}</b> — ${r.correct}/${r.total} (${r.pct}%) <span class="note">${when}</span></li>`;
+      })
+      .join("");
+    const pins = badges()
+      .map(
+        (b) =>
+          `<div class="badge-pin ${b.on ? "on" : ""}"><strong>${b.t}</strong><span>${b.d}</span>${b.on ? "" : "<em>locked</em>"}</div>`
+      )
+      .join("");
+    return `
+      <span class="kicker">${YOU}’s profile</span>
+      <h2>Scoreboard</h2>
+      <p class="lede">Points for quizzes, flashcards, the cash-flow games, and uploaded notes. Nothing is lost when you close the tab.</p>
+      <div class="profile-hero">
+        <div class="avatar-xl">G</div>
+        <div>
+          <div class="score-big">${state.xp}</div>
+          <p class="lede" style="margin:8px 0 0">pts · ${info.title}</p>
+          <p class="note">${info.toNext ? info.toNext + " pts to the next rank" : "You are on the top rank. Keep drilling."} · streak ${s.streak} (best ${s.bestStreak})</p>
+          <div class="meter fat" aria-hidden="true"><span style="width:${info.pct}%"></span></div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><span>Quizzes finished</span><b>${s.quizzes}</b></div>
+        <div class="stat"><span>Accuracy</span><b>${acc}%</b></div>
+        <div class="stat"><span>Best quiz</span><b>${s.bestPct}%</b></div>
+        <div class="stat"><span>Cards flipped</span><b>${s.flashes}</b></div>
+        <div class="stat"><span>Files uploaded</span><b>${s.files}</b></div>
+        <div class="stat"><span>Best streak</span><b>${s.bestStreak}</b></div>
+      </div>
+      <h3 class="subhead">Badges</h3>
+      <div class="badge-grid">${pins}</div>
+      <h3 class="subhead">Recent papers</h3>
+      ${recent ? `<ul class="teach recent-scores">${recent}</ul>` : `<p class="lede">Sit a quiz — cash flow or any topic pack — and the score lands here.</p>`}
+      <div class="actions">
+        <button class="btn primary" data-go="hub" type="button">Back to studying</button>
+        <button class="btn" data-q="Cash flow statement" type="button">Cash-flow quiz path</button>
+      </div>`;
+  }
+
   function render() {
     if (state.view === "hub") mount(hub());
     else if (state.view === "film") {
@@ -1168,6 +1346,8 @@
       bindDrill();
     } else if (state.view === "library") {
       mount(libraryView());
+    } else if (state.view === "profile") {
+      mount(profileView());
     } else if (state.view === "pack") {
       mount(packView());
       bindPack();
