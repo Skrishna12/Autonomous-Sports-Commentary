@@ -875,7 +875,7 @@
           </a>`
         )
         .join("");
-      return `<p class="note">Each card opens a live search aimed at IMA, the 2024 CSO/LOS, the handbook, FASB, SEC EDGAR, COSO, IFRS vs GAAP, Gleim/Wiley/Surgent/HOCK, and YouTube. Your friend only clicks.</p><section class="modes">${cards}</section>`;
+      return `<p class="note">Each card opens a live search aimed at IMA, the 2024 CSO/LOS, the handbook, FASB, SEC EDGAR, COSO, IFRS vs GAAP, Gleim/Wiley/Surgent/HOCK, and YouTube. ${YOU} only clicks.</p><section class="modes">${cards}</section>`;
     }
     if (state.packTab === "flash") {
       const cards = bank.flash;
