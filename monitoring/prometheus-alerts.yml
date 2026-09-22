@@ -1,0 +1,24 @@
+groups:
+  - name: ascs
+    rules:
+      - alert: ASCSHighErrorRate
+        expr: sum(rate(ascs_errors_total[5m])) > 0.1
+        for: 2m
+        labels:
+          severity: page
+        annotations:
+          summary: ASCS error rate is elevated
+      - alert: ASCSAgentLatency
+        expr: histogram_quantile(0.95, sum(rate(ascs_agent_latency_seconds_bucket[5m])) by (le, agent)) > 5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: Agent p95 latency above 5s
+      - alert: ASCSTTSSlow
+        expr: histogram_quantile(0.95, sum(rate(ascs_tts_ttfa_seconds_bucket[5m])) by (le)) > 3
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: TTS time-to-first-audio p95 above 3s

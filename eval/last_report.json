@@ -1,0 +1,22 @@
+{
+  "commentary_factual_accuracy": 1.0,
+  "judge_fluency": 4.5,
+  "judge_excitement": 4.245,
+  "qa_accuracy_50": 0.96,
+  "mean_event_to_audio_s": 0.004859418049989017,
+  "mean_tts_ttfa_s": 0.002528520100008791,
+  "cost": {
+    "deliveries": 20,
+    "replay_hours": 0.017,
+    "ec2_usd": 0.0002,
+    "total_usd": 0.0013,
+    "note": "Assumes t3.micro free-tier eligible hours already consumed; shut down when idle."
+  },
+  "targets": {
+    "accuracy": 0.95,
+    "judge_quality": 4.0,
+    "qa": 0.85,
+    "event_to_audio_s": 5.0,
+    "voice_qa_s": 6.0
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": true,
+  "panels": [
+    {
+      "title": "Agent latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(ascs_agent_latency_seconds_sum[1m]) / rate(ascs_agent_latency_seconds_count[1m])",
+          "legendFormat": "{{agent}}"
+        }
+      ]
+    },
+    {
+      "title": "TTS time-to-first-audio",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(ascs_tts_ttfa_seconds_sum[1m]) / rate(ascs_tts_ttfa_seconds_count[1m])",
+          "legendFormat": "ttfa"
+        }
+      ]
+    },
+    {
+      "title": "Questions per minute",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "sum(rate(ascs_questions_total[1m])) * 60", "legendFormat": "qpm" }
+      ]
+    },
+    {
+      "title": "Errors",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 8 },
+      "targets": [
+        { "expr": "rate(ascs_errors_total[5m])", "legendFormat": "{{component}}" }
+      ]
+    },
+    {
+      "title": "Replay sequence",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 8 },
+      "targets": [{ "expr": "ascs_replay_sequence", "legendFormat": "seq" }]
+    },
+    {
+      "title": "Tokens per over",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "targets": [
+        { "expr": "rate(ascs_tokens_per_over[5m])", "legendFormat": "{{over_key}}" }
+      ]
+    },
+    {
+      "title": "Cost per match (USD)",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "targets": [{ "expr": "ascs_cost_per_match_usd", "legendFormat": "usd" }]
+    }
+  ],
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "tags": ["ascs", "cricket"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "ASCS live health",
+  "uid": "ascs-live",
+  "version": 1
+}

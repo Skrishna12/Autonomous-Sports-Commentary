@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ascs-stats": {
+      "command": "python",
+      "args": ["-m", "ascs.mcp.server"]
+    }
+  }
+}
