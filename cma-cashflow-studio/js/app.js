@@ -300,7 +300,7 @@
           <h3>Ratio analysis</h3>
           <p>Liquidity, leverage, DuPont — Part 2 financial statement analysis.</p>
         </button>
-        <button class="card" data-q="WACC" type="button">
+        <button class="card" data-q="WACC cost of capital" type="button">
           <span class="tag">CMA P2</span>
           <h3>WACC &amp; capital</h3>
           <p>Cost of capital, CAPM, and capital-budgeting cousins (NPV / IRR).</p>
@@ -926,7 +926,8 @@
     const related = ((state.wiki && state.wiki.related) || [])
       .map((r) => `<a class="chip-topic" href="${r.url}" target="_blank" rel="noopener">${r.title}</a>`)
       .join("");
-    const wiki = state.wiki
+    const wiki =
+      state.wiki && (state.wiki.title || state.wiki.extract)
       ? `<div class="cheat" style="margin-top:22px"><span class="kicker">Plain-English snapshot (Wikipedia)</span>
           <h2 style="font-size:28px;margin:8px 0 10px">${state.wiki.title}</h2>
           <p class="note">${state.wiki.extract || ""}</p>

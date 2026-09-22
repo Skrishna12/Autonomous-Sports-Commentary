@@ -251,7 +251,7 @@ window.TOPICS = [
   },
   {
     id: "wacc",
-    title: "Cost of capital & securities",
+    title: "WACC & cost of capital",
     keys: "wacc cost of capital capm dividend discount bond yield term structure ipo dividend policy lease",
     part: "Part 2 · B. Corporate finance (20%)",
     blurb: "Risk/return, CAPM, WACC, bond and stock valuation, raising capital, dividend policy, leases.",

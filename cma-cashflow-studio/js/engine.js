@@ -24,6 +24,8 @@ window.Engine = {
     if (hay.includes(nq) && nq.length > 4) s += 12;
     t.forEach((w) => {
       if (hay.includes(w)) s += w.length > 5 ? 3 : 2;
+      if (this.norm(topic.keys).split(" ").includes(w)) s += 4;
+      if (this.norm(topic.title).split(" ").includes(w)) s += 3;
     });
     return s;
   },
@@ -215,26 +217,56 @@ window.Engine = {
   },
 
   async wiki(q) {
+    const tries = [q, q + " finance", q + " accounting"];
+    if (/wacc/i.test(q)) tries.unshift("weighted average cost of capital");
+    if (/cash flow/i.test(q)) tries.unshift("statement of cash flows");
     try {
-      const sRes = await fetch(
-        "https://en.wikipedia.org/w/api.php?action=opensearch&limit=5&namespace=0&origin=*&search=" +
-          encodeURIComponent(q + " accounting")
-      );
-      const s = await sRes.json();
-      const titles = s[1] || [];
-      if (!titles.length) return { extract: null, related: [] };
+      let titles = [];
+      let urls = [];
+      for (const search of tries) {
+        const sRes = await fetch(
+          "https://en.wikipedia.org/w/api.php?action=opensearch&limit=8&namespace=0&origin=*&search=" +
+            encodeURIComponent(search)
+        );
+        const s = await sRes.json();
+        titles = s[1] || [];
+        urls = s[3] || [];
+        if (titles.length) break;
+      }
+      if (!titles.length) return null;
+      const qn = this.norm(q);
+      const qtok = this.tokens(q);
+      let pick = 0;
+      let best = -1;
+      titles.forEach((t, i) => {
+        const n = this.norm(t);
+        let sc = 0;
+        if (n.includes(qn) && qn.length > 3) sc += 10;
+        qtok.forEach((w) => {
+          if (n.includes(w)) sc += 2;
+        });
+        if (/finance|accounting|cash|capital|cost|budget|ratio|control/.test(n)) sc += 2;
+        if (/company|software|album|film|band/.test(n)) sc -= 8;
+        if (sc > best) {
+          best = sc;
+          pick = i;
+        }
+      });
+      const title = titles[pick];
       const sumRes = await fetch(
-        "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(titles[0])
+        "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title)
       );
       const sum = sumRes.ok ? await sumRes.json() : {};
       const related = titles.slice(0, 5).map((t, i) => ({
         title: t,
-        url: (s[3] && s[3][i]) || "https://en.wikipedia.org/wiki/" + encodeURIComponent(t),
+        url: urls[i] || "https://en.wikipedia.org/wiki/" + encodeURIComponent(t),
       }));
       return {
-        title: sum.title || titles[0],
+        title: sum.title || title,
         extract: sum.extract || "",
-        url: sum.content_urls && sum.content_urls.desktop && sum.content_urls.desktop.page,
+        url:
+          (sum.content_urls && sum.content_urls.desktop && sum.content_urls.desktop.page) ||
+          (related[pick] && related[pick].url),
         related,
       };
     } catch (err) {
@@ -244,7 +276,7 @@ window.Engine = {
 
   packFromQuery(q, fileHint) {
     const hits = this.search(q);
-    const best = hits[0] && hits[0].s >= 3 ? hits[0].topic : null;
+    const best = hits[0] && hits[0].s >= 2 ? hits[0].topic : null;
     const parts = this.guessPart(q);
     if (best) {
       if (/^Part 1/.test(best.part)) parts.p1.unshift(best.part);
