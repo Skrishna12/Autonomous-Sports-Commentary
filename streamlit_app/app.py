@@ -75,6 +75,16 @@ with left:
             st.dataframe(batters, hide_index=True, use_container_width=True)
     if card.get("required_run_rate") is not None:
         st.metric("Required run rate", card["required_run_rate"])
+    try:
+        hl = httpx.get(f"{API}/replay/{session_id}/highlights", params={"language": language}, timeout=15).json()
+        st.subheader("Highlights and summary")
+        st.write(hl.get("summary"))
+        if hl.get("audio_path"):
+            st.audio(f"{API}/audio?path={hl['audio_path']}")
+        for clip in hl.get("highlights") or []:
+            st.caption(clip.get("text"))
+    except Exception:
+        pass
 
 with right:
     st.subheader("Live commentary")

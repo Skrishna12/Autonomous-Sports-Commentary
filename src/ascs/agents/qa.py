@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from ascs.agents.rag import retrieve_deliveries
 from ascs.agents.tools import batter_innings, bowler_innings, partnerships
 
 
@@ -48,6 +49,17 @@ def answer_question(question: str, scorecard: dict[str, Any], session: Session |
     q = question.lower().strip()
     if not any(_innings_started(i) for i in scorecard.get("innings") or []):
         return "The match has not started yet, so I do not have a scorecard."
+
+    if session and match_id and any(w in q for w in ("which ball", "when did", "who hit", "who was out", "boundary")):
+        hits = retrieve_deliveries(session, match_id, question)
+        if hits:
+            first = hits[0]
+            return (
+                f"From the ball log: {first['actual_delivery']} {first['batter']} off {first['bowler']}, "
+                f"{first['runs_total']} run(s)"
+                + (f", {first['player_out']} {first['wicket_kind']}" if first.get("is_wicket") else "")
+                + "."
+            )
 
     team_inn = None
     for inn in scorecard.get("innings") or []:

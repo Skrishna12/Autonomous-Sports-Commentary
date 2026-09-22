@@ -15,6 +15,7 @@ from ascs.agents.personas import PERSONAS
 from ascs.config import get_settings
 from ascs.eval.judge import judge_commentary, log_mlflow
 from ascs.eval.metrics import estimate_cost_per_match, metrics
+from ascs.agents.summary import highlights_from_state, post_match_summary
 from ascs.models import CommentaryLine, Match, QATurn, init_db, make_session_factory
 from ascs.replay.engine import ReplayEngine
 from ascs.replay.state import scorecard_view
@@ -292,6 +293,18 @@ def audio(path: str):
     if not p.exists():
         raise HTTPException(404, "audio missing")
     return Response(p.read_bytes(), media_type="audio/wav")
+
+
+@app.get("/replay/{session_id}/highlights")
+def highlights(session_id: str, language: str = "en"):
+    rs = _get_engine().sessions.get(session_id)
+    if not rs:
+        raise HTTPException(404, "unknown session")
+    card = scorecard_view(rs.state)
+    summary = post_match_summary(card, language)
+    clips = highlights_from_state(card)
+    audio = synthesize(summary, "Nia Voss", language)
+    return {"summary": summary, "highlights": clips, "audio_path": audio["path"]}
 
 
 @app.get("/metrics")

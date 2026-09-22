@@ -77,8 +77,29 @@ def _try_kokoro(text: str, voice: str) -> bytes | None:
 
 
 def _try_indic(text: str, language: str) -> bytes | None:
-    # Indic Parler-TTS is optional. Fall back to synthetic if weights are absent.
-    return None
+    """Prefer Indic Parler-TTS weights; otherwise espeak-ng in hi/ta (not a cloned voice)."""
+    try:
+        # Optional heavy dependency — imported only when requested.
+        from parler_tts import ParlerTTSForConditionalGeneration  # type: ignore
+
+        _ = ParlerTTSForConditionalGeneration
+    except Exception:
+        pass
+    import shutil
+    import subprocess
+    import tempfile
+
+    binary = shutil.which("espeak-ng") or shutil.which("espeak")
+    if not binary:
+        return None
+    voice = "hi" if language == "hi" else "ta"
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        out = tmp.name
+    try:
+        subprocess.run([binary, "-v", voice, "-w", out, text], check=True, capture_output=True, timeout=20)
+        return Path(out).read_bytes()
+    except Exception:
+        return None
 
 
 def transcribe(audio_bytes: bytes, filename: str = "question.wav") -> dict[str, Any]:

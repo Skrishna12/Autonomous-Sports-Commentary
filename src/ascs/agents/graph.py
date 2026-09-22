@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ascs.agents.personas import ANALYST_PROMPT, PERSONAS, PLAY_BY_PLAY_PROMPT, PROMPT_VERSION, QA_PROMPT
 from ascs.agents.templates import analyst_line, play_by_play, should_analyst_speak
+from ascs.agents.rag import retrieve_deliveries
 from ascs.agents.tools import batter_innings, bowler_innings
 from ascs.config import get_settings
 from ascs.replay.state import scorecard_view
@@ -73,11 +74,15 @@ def node_tools(state: AgentState, session: Session | None) -> AgentState:
     event = state.get("event") or {}
     match_id = (state.get("game_state") or {}).get("match_id") or event.get("match_id")
     stats: dict[str, Any] = {}
-    if session is not None and match_id and event:
+    if session is not None and match_id:
         innings = event.get("innings")
         try:
-            stats["batter"] = batter_innings(session, match_id, event["batter"], innings)
-            stats["bowler"] = bowler_innings(session, match_id, event["bowler"], innings)
+            if event.get("batter"):
+                stats["batter"] = batter_innings(session, match_id, event["batter"], innings)
+            if event.get("bowler"):
+                stats["bowler"] = bowler_innings(session, match_id, event["bowler"], innings)
+            if state.get("question"):
+                stats["retrieved"] = retrieve_deliveries(session, match_id, state["question"])
         except Exception:
             stats = {}
     state["tool_stats"] = stats

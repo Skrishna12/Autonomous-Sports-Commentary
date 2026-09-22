@@ -39,6 +39,16 @@ def cmd_bootstrap(_: argparse.Namespace) -> None:
     ingest_local(samples / "mini_t20.json")
     ingest_local(samples / "1534209.json")
     print(json.dumps(run_etl(), indent=2))
+    from ascs.agents.personas import ANALYST_PROMPT, PLAY_BY_PLAY_PROMPT, PROMPT_VERSION, QA_PROMPT
+    from ascs.models import PromptVersion
+
+    Session = make_session_factory()
+    with Session() as s:
+        if not s.query(PromptVersion).filter_by(version=PROMPT_VERSION).first():
+            s.add(PromptVersion(name="play_by_play", version=PROMPT_VERSION, body=PLAY_BY_PLAY_PROMPT))
+            s.add(PromptVersion(name="analyst", version=PROMPT_VERSION, body=ANALYST_PROMPT))
+            s.add(PromptVersion(name="qa", version=PROMPT_VERSION, body=QA_PROMPT))
+            s.commit()
 
 
 def main(argv: list[str] | None = None) -> None:

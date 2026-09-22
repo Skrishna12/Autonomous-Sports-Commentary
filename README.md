@@ -6,7 +6,7 @@ This repository is the full core path from the project brief:
 
 **ETL → replay → agents → speech → Streamlit → deploy → monitor**
 
-Stretch modules (LoRA, VLM) stay optional until that path is green.
+See [docs/requirements-traceability.md](docs/requirements-traceability.md) for a requirement-by-requirement score against the project PDF.
 
 ## Architecture
 
