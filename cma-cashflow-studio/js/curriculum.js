@@ -34,8 +34,28 @@ window.TOPICS = [
       { f: "Interest coverage", b: "EBIT / interest. Solvency of servicing debt from operations." },
     ],
     quiz: [
-      { q: "Current ratio rises because inventory piled up. Liquidity is:", opts: ["Clearly better", "Maybe worse in cash terms", "Unchanged", "A financing inflow"], a: 1, explain: "Current ratio can look healthy while cash is trapped in stock. Pair with cash flow and quick ratio." },
-      { q: "DuPont ROE is:", opts: ["EBIT/sales only", "Margin × turnover × leverage", "Current assets/current liabilities", "Cogs/average inventory"], a: 1, explain: "Net margin × asset turnover × equity multiplier. CMA staple." },
+      {
+        q: "Current ratio went up only because unsold stock piled up. Is the company really more liquid?",
+        opts: [
+          "Yes — any rise in current ratio means more cash",
+          "Not necessarily — cash may be trapped in inventory",
+          "Yes, and it is a financing inflow",
+          "The current ratio never uses inventory",
+        ],
+        a: 1,
+        explain: "Current ratio = current assets / current liabilities. Extra stock lifts the ratio but is not cash. Check the quick ratio and the cash flow statement.",
+      },
+      {
+        q: "DuPont analysis breaks ROE into which three parts?",
+        opts: [
+          "Only EBIT / sales",
+          "Profit margin × asset turnover × financial leverage",
+          "Current assets / current liabilities",
+          "Cost of goods sold / average inventory",
+        ],
+        a: 1,
+        explain: "ROE = net margin × how fast assets turn × how much debt/equity you use. One number, three stories.",
+      },
     ],
   },
   {
@@ -52,7 +72,17 @@ window.TOPICS = [
       "CMA: cash budget is the working-capital control document.",
     ],
     quiz: [
-      { q: "Cash conversion cycle is:", opts: ["Inventory days only", "Inventory + receivables − payables days", "CA − CL", "PAT / equity"], a: 1, explain: "Days cash is stuck between paying suppliers and collecting customers." },
+      {
+        q: "What is the cash conversion cycle (in days)?",
+        opts: [
+          "Only inventory holding days",
+          "Inventory days + receivable days − payable days",
+          "Current assets minus current liabilities",
+          "Profit after tax / equity",
+        ],
+        a: 1,
+        explain: "It is how long cash is stuck: you buy stock, sell on credit, then pay suppliers. Longer cycle = more cash locked in operations.",
+      },
     ],
   },
   {
@@ -69,7 +99,17 @@ window.TOPICS = [
       "CA costing paper wants functional budgets and cash budgets with workings.",
     ],
     quiz: [
-      { q: "A flexible budget is prepared:", opts: ["Only at original volume", "At actual (or other) activity level", "After the audit report", "Only for cash"], a: 1, explain: "So you can split activity variance from spending/efficiency." },
+      {
+        q: "Why do we recast the budget at the actual output level (a flexible budget)?",
+        opts: [
+          "To keep the original sales volume no matter what",
+          "So we can compare actual cost with what cost should have been at that output",
+          "Because the auditor asks for it after the audit report",
+          "It is used only for the cash budget",
+        ],
+        a: 1,
+        explain: "A flexible budget says: ‘at this actual volume, allowed cost is X.’ Then any leftover gap is spending or efficiency — not just volume.",
+      },
     ],
   },
   {
@@ -86,7 +126,17 @@ window.TOPICS = [
       "Absorption vs marginal: fixed overhead in inventory vs period cost. CMA exam favourite.",
     ],
     quiz: [
-      { q: "With a scarce machine hour, rank products by:", opts: ["Selling price", "Contribution per machine hour", "Total fixed cost", "Gross profit % only"], a: 1, explain: "Limiting-factor rule. Same logic in CMA decision analysis." },
+      {
+        q: "Machine hours are limited. Which product should you make first?",
+        opts: [
+          "The one with the highest selling price",
+          "The one with the highest contribution per machine hour",
+          "The one with the highest total fixed cost",
+          "The one with the highest gross profit %",
+        ],
+        a: 1,
+        explain: "When a resource is scarce, rank by contribution earned per unit of that scarce resource — not per unit of product.",
+      },
     ],
   },
   {
@@ -103,7 +153,17 @@ window.TOPICS = [
       "Sales: price and volume; mix and quantity when more than one product.",
     ],
     quiz: [
-      { q: "Material usage variance uses:", opts: ["Actual price", "Standard price × qty gap", "Budgeted sales", "Fixed overhead rate"], a: 1, explain: "Quantity difference is priced at standard so price noise stays in the price variance." },
+      {
+        q: "You used more kg of material than the standard allowed. How is material usage variance valued?",
+        opts: [
+          "Quantity difference × actual purchase price",
+          "Quantity difference × standard price",
+          "Using budgeted sales",
+          "Using the fixed overhead rate",
+        ],
+        a: 1,
+        explain: "Usage variance = (actual kg − standard kg) × standard price. Price problems stay in the price variance, so the two are not mixed.",
+      },
     ],
   },
   {
@@ -120,7 +180,17 @@ window.TOPICS = [
       "Joint products share cost up to split-off (physical / NRV). By-product is usually netted.",
     ],
     quiz: [
-      { q: "Abnormal loss in process costing is:", opts: ["Ignored", "Valued like finished output and written off", "Always a cash outflow", "A financing item"], a: 1, explain: "It is unexpected, so it does not hide inside the good units." },
+      {
+        q: "In process costing, what happens to abnormal loss?",
+        opts: [
+          "Ignore it",
+          "Value it like good output and charge it as a loss of the period",
+          "Treat it as a cash outflow every time",
+          "Show it as a financing item",
+        ],
+        a: 1,
+        explain: "Normal loss is expected and stays in the cost of good units. Abnormal loss is a surprise, so it is valued and written off separately.",
+      },
     ],
   },
   {
@@ -137,7 +207,17 @@ window.TOPICS = [
       "Returns and e-way bill are compliance, not optional memory.",
     ],
     quiz: [
-      { q: "A Mumbai trader ships goods to Delhi. Levy is:", opts: ["CGST + SGST", "IGST", "Only SGST", "Only customs"], a: 1, explain: "Inter-state supply → IGST." },
+      {
+        q: "A trader in Mumbai sends goods to a customer in Delhi. Which GST is charged?",
+        opts: [
+          "CGST + SGST (intra-state)",
+          "IGST (inter-state)",
+          "Only SGST of Maharashtra",
+          "Only customs duty",
+        ],
+        a: 1,
+        explain: "Different states = inter-state supply = IGST. Same state would have been CGST + SGST.",
+      },
     ],
   },
   {
@@ -154,7 +234,17 @@ window.TOPICS = [
       "TDS and advance tax are cash — they also show up in working-capital / CFS thinking.",
     ],
     quiz: [
-      { q: "Standard deduction on house property (let out) is:", opts: ["100% of NAV", "30% of NAV", "Interest only", "Municipal tax only"], a: 1, explain: "Section 24(a): 30% of NAV after municipal taxes." },
+      {
+        q: "For a let-out house, after municipal tax, what standard deduction is allowed?",
+        opts: [
+          "100% of net annual value",
+          "30% of net annual value",
+          "Only home-loan interest, nothing else",
+          "Only the municipal tax again",
+        ],
+        a: 1,
+        explain: "Section 24(a) gives a flat 30% of NAV. Interest on housing loan is a separate deduction under 24(b).",
+      },
     ],
   },
   {
@@ -171,7 +261,17 @@ window.TOPICS = [
       "CMA: COSO — control environment, risk assessment, control activities, information, monitoring.",
     ],
     quiz: [
-      { q: "Vouching primarily tests:", opts: ["Completeness of unrecorded assets", "Occurrence of recorded transactions", "Going concern", "Subsequent events only"], a: 1, explain: "From the book back to the source document." },
+      {
+        q: "In audit, what does vouching mainly check?",
+        opts: [
+          "That missing assets get into the books (completeness)",
+          "That a recorded entry really happened (occurrence) — from the book back to the bill",
+          "Whether the company will survive (going concern)",
+          "Only events after the balance sheet date",
+        ],
+        a: 1,
+        explain: "Vouching = ledger → source document. It answers: ‘Did this recorded purchase/sale actually occur?’ Completeness is the opposite direction.",
+      },
     ],
   },
   {
@@ -188,7 +288,17 @@ window.TOPICS = [
       "SOX 404 is US listed-company language CMA candidates still meet in the textbook.",
     ],
     quiz: [
-      { q: "Bank reconciliation by someone with no cash custody is mainly:", opts: ["Preventive custody", "A detective control", "A financing activity", "Inherent risk"], a: 1, explain: "It finds what already went wrong. Dual custody over cash is preventive." },
+      {
+        q: "A person who never handles cash prepares the bank reconciliation. What kind of control is this?",
+        opts: [
+          "Preventive — it stops theft before it happens",
+          "Detective — it finds errors or fraud after they have occurred",
+          "A financing activity on the cash flow statement",
+          "Inherent risk of the industry",
+        ],
+        a: 1,
+        explain: "A bank rec finds what already went wrong. Two people required to open the cash box is preventive.",
+      },
     ],
   },
   {
@@ -205,7 +315,17 @@ window.TOPICS = [
       "Independence is for assurance. Confidentiality is not a cloak for illegal acts.",
     ],
     quiz: [
-      { q: "First IMA ethics step when policy exists is:", opts: ["Call a journalist", "Follow the organisation’s established policy", "Post on LinkedIn", "Ignore it"], a: 1, explain: "IMA resolution: use internal channels first." },
+      {
+        q: "You face an ethics problem. The company has a written policy. What is the first IMA (US CMA) step?",
+        opts: [
+          "Call a journalist",
+          "Follow the company’s established ethics policy",
+          "Post the problem on social media",
+          "Ignore it if the amount is small",
+        ],
+        a: 1,
+        explain: "Use internal policy first, then higher authority, then IMA ethics help. Going public is not the first step.",
+      },
     ],
   },
   {
@@ -222,7 +342,17 @@ window.TOPICS = [
       "Nominal vs real rates; risk-adjusted discount rates.",
     ],
     quiz: [
-      { q: "Mutually exclusive projects, NPV and IRR disagree. Prefer:", opts: ["Higher IRR always", "NPV at the cost of capital", "Payback", "Accounting rate of return"], a: 1, explain: "NPV measures wealth in today’s rupees." },
+      {
+        q: "You can pick only one project. NPV says A; IRR says B. What should you choose?",
+        opts: [
+          "Always the higher IRR",
+          "The project with the higher NPV at the cost of capital",
+          "The shorter payback, ignoring NPV",
+          "The higher accounting rate of return",
+        ],
+        a: 1,
+        explain: "NPV measures extra wealth in today’s rupees. When projects compete, NPV is the rule that matches shareholder value.",
+      },
     ],
   },
   {
@@ -239,7 +369,17 @@ window.TOPICS = [
       "Sensitivity: one variable. Scenario: a story. Simulation: many draws. CMA territory.",
     ],
     quiz: [
-      { q: "Sunk research cost in a project appraisal is:", opts: ["Added to outlay", "Ignored", "A financing inflow", "Always capitalised"], a: 1, explain: "Already spent. Incremental cash flows only." },
+      {
+        q: "Last year you already spent ₹20 lakh on research. You now decide whether to launch the product. How is that ₹20 lakh treated in NPV?",
+        opts: [
+          "Add it again to the project outlay",
+          "Ignore it — the money is already gone (sunk cost)",
+          "Treat it as a financing inflow",
+          "Always capitalise it into the asset",
+        ],
+        a: 1,
+        explain: "Sunk cost does not change whether you go ahead or not. Use only future incremental cash flows.",
+      },
     ],
   },
   {
@@ -256,7 +396,12 @@ window.TOPICS = [
       "MM with no tax: capital structure irrelevant. With tax: debt shield has value (until distress).",
     ],
     quiz: [
-      { q: "After-tax cost of 10% debt, tax 30% is:", opts: ["10%", "7%", "13%", "3%"], a: 1, explain: "10 × (1−0.3) = 7%." },
+      {
+        q: "Debt costs 10% before tax. Tax rate is 30%. What is the after-tax cost of debt?",
+        opts: ["10%", "7%", "13%", "3%"],
+        a: 1,
+        explain: "Interest is tax-deductible. After-tax cost = 10% × (1 − 0.30) = 7%.",
+      },
     ],
   },
   {
@@ -273,7 +418,17 @@ window.TOPICS = [
       "Write-down is a period expense; reversal when NRV recovers (AS-2 allows).",
     ],
     quiz: [
-      { q: "LIFO under AS-2 is:", opts: ["Preferred", "Not a permitted formula", "Mandatory for tax", "A cash equivalent"], a: 1, explain: "AS-2 permits specific ID, FIFO, weighted average — not LIFO." },
+      {
+        q: "May you value inventory using LIFO under Indian AS-2?",
+        opts: [
+          "Yes — it is preferred",
+          "No — AS-2 does not allow LIFO",
+          "Yes — it is mandatory for tax",
+          "LIFO is a cash equivalent, not an inventory method",
+        ],
+        a: 1,
+        explain: "AS-2 allows specific identification, FIFO and weighted average. LIFO is not permitted.",
+      },
     ],
   },
   {
@@ -290,7 +445,17 @@ window.TOPICS = [
       "Subsequent spend: capital if it increases future benefit; else expense.",
     ],
     quiz: [
-      { q: "A major engine replacement that extends life is usually:", opts: ["Always expense", "Capitalised and depreciated", "Financing cash", "Inventory"], a: 1, explain: "Future economic benefit increased — capital item." },
+      {
+        q: "You replace a truck engine and the truck will last several extra years. How is the cost usually treated?",
+        opts: [
+          "Always write it off as an expense immediately",
+          "Capitalise it and depreciate it over the extra life",
+          "Show it as a financing cash inflow",
+          "Put it in inventory",
+        ],
+        a: 1,
+        explain: "If the spend increases future benefit (longer life or more capacity), it is a capital item, not a repair expense.",
+      },
     ],
   },
   {
@@ -307,7 +472,12 @@ window.TOPICS = [
       "Always read the attempt’s ICAI module — penalties and exemptions move.",
     ],
     quiz: [
-      { q: "Minimum directors in a public company:", opts: ["One", "Two", "Three", "Fifteen"], a: 2, explain: "Companies Act: public company minimum three directors." },
+      {
+        q: "What is the minimum number of directors in a public company?",
+        opts: ["1", "2", "3", "15"],
+        a: 2,
+        explain: "Companies Act, 2013: public company — at least 3 directors. Private company — 2. One Person Company — 1.",
+      },
     ],
   },
   {
@@ -324,7 +494,17 @@ window.TOPICS = [
       "BCG: star, cash cow, question mark, dog — based on share and market growth.",
     ],
     quiz: [
-      { q: "Balanced scorecard’s four legs are:", opts: ["Only financial ratios", "Financial, customer, process, learning", "SWOT only", "Five forces"], a: 1, explain: "Kaplan & Norton. CMA performance favourite." },
+      {
+        q: "The balanced scorecard looks at performance from which four sides?",
+        opts: [
+          "Only financial ratios",
+          "Financial, customer, internal process, and learning & growth",
+          "Only SWOT",
+          "Only Porter’s five forces",
+        ],
+        a: 1,
+        explain: "Money is one side. You also measure customers, how work is done, and whether people/systems are improving.",
+      },
     ],
   },
   {
@@ -341,7 +521,17 @@ window.TOPICS = [
       "Always contrast with AS/Ind AS when you sit both CA and CMA.",
     ],
     quiz: [
-      { q: "ASC 606 revenue is recognised when:", opts: ["Cash is received always", "Control of the good/service transfers", "The contract is signed", "Inventory is purchased"], a: 1, explain: "Five-step model; control, not merely cash or signature." },
+      {
+        q: "Under US revenue rules (ASC 606 / similar to Ind AS 115), when do you recognise revenue?",
+        opts: [
+          "Always on the day cash is received",
+          "When control of the goods or service passes to the customer",
+          "On the day the contract is signed, even if nothing is delivered",
+          "When you purchase inventory",
+        ],
+        a: 1,
+        explain: "Revenue follows transfer of control — not merely receiving cash or signing a contract.",
+      },
     ],
   },
   {
@@ -358,7 +548,17 @@ window.TOPICS = [
       "Tie analytics to a decision (price, credit, fraud), not to a chart for its own sake.",
     ],
     quiz: [
-      { q: "A model that recommends the order quantity is:", opts: ["Descriptive", "Prescriptive", "Only diagnostic", "A cash flow"], a: 1, explain: "Prescriptive = what action to take." },
+      {
+        q: "A tool tells the manager ‘order 400 units now’. Which type of analytics is that?",
+        opts: [
+          "Descriptive (what happened)",
+          "Prescriptive (what action to take)",
+          "Only diagnostic (why it happened)",
+          "A cash flow classification",
+        ],
+        a: 1,
+        explain: "Descriptive = what happened. Diagnostic = why. Predictive = what may happen. Prescriptive = what you should do.",
+      },
     ],
   },
 ];

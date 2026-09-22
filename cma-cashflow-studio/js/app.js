@@ -466,6 +466,14 @@
     );
   }
 
+  function quizFeedback(item, picked) {
+    const right = item.opts[item.a];
+    if (picked === item.a) {
+      return `<div class="feedback why-box"><strong>Correct.</strong> ${item.explain}</div>`;
+    }
+    return `<div class="feedback wrong why-box"><strong>Wrong.</strong> Right answer: <span class="right-ans">${right}</span>. ${item.explain}</div>`;
+  }
+
   function quizView() {
     if (state.quizI >= CFS.quiz.length) {
       const pct = Math.round((state.quizScore / CFS.quiz.length) * 100);
@@ -499,7 +507,7 @@
         <span class="kicker">Question ${state.quizI + 1} / ${CFS.quiz.length}</span>
         <h2 class="q">${item.q}</h2>
         <div class="options">${opts}</div>
-        ${picked !== null ? `<p class="explain">${item.explain}</p><div class="actions"><button class="btn primary" id="next-q" type="button">${state.quizI + 1 === CFS.quiz.length ? "See the night’s score" : "Next stem"}</button></div>` : ""}
+        ${picked !== null ? `${quizFeedback(item, picked)}<div class="actions"><button class="btn primary" id="next-q" type="button">${state.quizI + 1 === CFS.quiz.length ? "See the score" : "Next question"}</button></div>` : ""}
       </div>`;
   }
 
@@ -644,7 +652,39 @@
   function packBank() {
     const t = state.pack && state.pack.topic;
     if (t && t.studio === "cfs") return { quiz: CFS.quiz, flash: CFS.flash };
-    return { quiz: (t && t.quiz) || [], flash: (t && t.flash) || [] };
+    const quiz = (t && t.quiz) || [];
+    const flash = (t && t.flash) || [];
+    if (quiz.length) return { quiz, flash };
+    const p = state.pack;
+    const ca = (p.papers.ca && p.papers.ca[0]) || "the matching CA Intermediate chapter";
+    const cma = (p.papers.cma && p.papers.cma[0]) || "the matching US CMA outline area";
+    return {
+      flash,
+      quiz: [
+        {
+          q: `You searched “${p.query}”. Where should a CA Intermediate student open the book first?`,
+          opts: [
+            ca,
+            "Skip ICAI and only watch random reels",
+            "It is never tested in CA Intermediate",
+            "Only in the income-tax return utility",
+          ],
+          a: 0,
+          explain: `Start with ${ca}. Then use the “All CA + CMA links” tab for ICAI study material, RTP and MTP.`,
+        },
+        {
+          q: `The same topic on the US CMA side is closest to:`,
+          opts: [
+            cma,
+            "Indian GST returns only",
+            "Companies Act board-meeting quorum only",
+            "It is never in CMA",
+          ],
+          a: 0,
+          explain: `US CMA maps this to ${cma}. Open the IMA / CMA cards on the links tab — do not mix Indian GST rules into the US paper unless the question is Indian tax.`,
+        },
+      ],
+    };
   }
 
   function packView() {
@@ -742,7 +782,7 @@
         <span class="kicker">Question ${state.packQuizI + 1} / ${qs.length}</span>
         <h2 class="q">${item.q}</h2>
         <div class="options">${opts}</div>
-        ${picked !== null ? `<p class="explain">${item.explain}</p><div class="actions"><button class="btn primary" id="pack-next-q" type="button">Next</button></div>` : ""}
+        ${picked !== null ? `${quizFeedback(item, picked)}<div class="actions"><button class="btn primary" id="pack-next-q" type="button">${state.packQuizI + 1 === qs.length ? "See the score" : "Next question"}</button></div>` : ""}
       </div>`;
     }
     const notes = ((topic && topic.notes) || []).map((n) => `<li>${n}</li>`).join("");
