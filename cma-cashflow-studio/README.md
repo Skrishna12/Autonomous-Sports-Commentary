@@ -1,8 +1,8 @@
-# US CMA Studio
+# Gowtham’s US CMA Studio
 
-Interactive study desk for the **US Certified Management Accountant** exam (IMA). **No tech skills needed.**
+Interactive study desk for **Gowtham** preparing for the US Certified Management Accountant exam (IMA). **No tech skills needed.**
 
-## Play (send this link)
+## Play (send this to Gowtham)
 
 https://raw.githack.com/Skrishna12/Autonomous-Sports-Commentary/cursor/cma-cashflow-studio-ba37/cma-cashflow-studio/index.html
 

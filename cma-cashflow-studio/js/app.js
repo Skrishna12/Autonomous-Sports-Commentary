@@ -1,4 +1,5 @@
 (function () {
+  const YOU = "Gowtham";
   const $ = (sel, el = document) => el.querySelector(sel);
   const app = $("#app");
   const state = {
@@ -178,10 +179,10 @@
   }
 
   function rank() {
-    if (state.xp >= 180) return "Controller of the night";
-    if (state.xp >= 110) return "Part 2 ready";
-    if (state.xp >= 50) return "Part 1 ready";
-    return "CMA candidate";
+    if (state.xp >= 180) return YOU + " · controller of the night";
+    if (state.xp >= 110) return YOU + " · Part 2 ready";
+    if (state.xp >= 50) return YOU + " · Part 1 ready";
+    return YOU + " · CMA candidate";
   }
 
   function topbar() {
@@ -190,7 +191,7 @@
     return `
       <div class="topbar">
         <div class="brand">
-          <small>US CMA Studio</small>
+          <small>${YOU}’s US CMA desk</small>
           <b>Just type the topic</b>
         </div>
         <div class="xp">
@@ -266,9 +267,9 @@
     return `
       <section class="hero search-hero">
         <div>
-          <span class="kicker">No login · No app install · Type like you text</span>
-          <h1>What are you studying today?</h1>
-          <p class="lede">Type a US CMA topic — cash flow, COSO, WACC, ethics, NPV — or upload class notes / a PDF. The studio maps it to the 2024 IMA outline (Part 1 &amp; 2), pulls a plain-English snapshot, and opens every official IMA / FASB / SEC / COSO search for you.</p>
+          <span class="kicker">For ${YOU} · No login · Type like you text</span>
+          <h1>${YOU}, what are you studying today?</h1>
+          <p class="lede">This desk is yours. Type a US CMA topic — cash flow, COSO, WACC, ethics, NPV — or upload class notes / a PDF. It maps to the 2024 IMA outline (Part 1 &amp; 2), pulls a plain-English snapshot, and opens every official IMA / FASB / SEC / COSO search.</p>
           <form class="seek" id="seek-form">
             <input id="seek-input" type="search" name="q" autocomplete="off" placeholder="e.g. statement of cash flows, COSO, WACC…" />
             <button class="btn primary" type="submit">Find resources</button>
@@ -286,7 +287,7 @@
             <div class="cash-lane inv"></div>
             <div class="cash-lane fin"></div>
           </div>
-          <div class="poster-caption">IMA CSO 2024 · Part 1 &amp; 2 · official IMA, FASB, SEC, COSO first</div>
+          <div class="poster-caption">${YOU} · IMA CSO 2024 · Part 1 &amp; 2 · official sources first</div>
         </div>
       </section>
       <section class="modes">
@@ -521,7 +522,7 @@
 
     return `
       <span class="kicker">Indirect method · US GAAP (ASC 230)</span>
-      <h2>Write Meridian’s cash flow</h2>
+      <h2>${YOU}, write Meridian’s cash flow</h2>
       <p class="lede">Net income $${f.pat}0,000 is already on the page. Apply adjustments on the right. Interest paid and interest received stay in operating under US GAAP (already in net income). Opening cash is $${f.openCash}0,000.</p>
       <div class="lab-grid">
         <div class="stmt">
@@ -604,7 +605,7 @@
         <div class="ending">
           <div class="badge">${badge}</div>
           <div class="score-big">${state.quizScore}/${bank.length}</div>
-          <h2>The night’s paper</h2>
+          <h2>${YOU}’s night paper</h2>
           <p class="lede" style="margin:12px auto">Cash flow is a story about timing. Replay the film or flip the standard and try the buckets again.</p>
           <div class="actions quiz-nav" style="justify-content:center">
             <button class="btn" id="prev-q" type="button">← Previous question</button>
@@ -717,7 +718,7 @@
     return `
       <span class="kicker">Resource desk</span>
       <h2>Read the source, then play</h2>
-      <p class="lede">These are the live IMA / FASB / COSO / SEC pages the studio is built from. Open a PDF, come back, and try the same idea in the film or the buckets. Not a substitute for the CMA Handbook or CSO.</p>
+      <p class="lede">${YOU} — these are the live IMA / FASB / COSO / SEC pages. Open a PDF, come back, and try the same idea in the film or the buckets. Not a substitute for the CMA Handbook or CSO.</p>
       <section class="modes">${cards}</section>`;
   }
 
@@ -794,7 +795,7 @@
       flash,
       quiz: [
         {
-          q: `You searched “${p.query}”. Where should a US CMA candidate open the outline first?`,
+          q: `${YOU} searched “${p.query}”. Where should a US CMA candidate open the outline first?`,
           opts: [
             p1,
             "Skip IMA and only watch random reels",
