@@ -494,6 +494,50 @@ a.card { text-decoration: none; }
 .plain { margin: 0; padding-left: 18px; color: var(--muted); line-height: 1.5; }
 .teach { color: var(--ink); line-height: 1.55; font-size: 16px; }
 .pack-body { margin-top: 8px; }
+.doc-walk { margin: 8px 0 28px; }
+.doc-explain {
+  background: #161d29;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin: 12px 0;
+}
+.doc-explain h3 { margin: 0 0 8px; font-size: 22px; }
+.doc-explain h3 small { color: var(--gold); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin-left: 8px; }
+.doc-explain p { color: var(--muted); margin: 0; line-height: 1.55; }
+.doc-explain details { margin-top: 10px; color: var(--muted); }
+.doc-explain summary { cursor: pointer; color: var(--gold); }
+.doc-toolbar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin: 12px 0 16px; }
+.doc-toolbar input {
+  flex: 1;
+  min-width: 200px;
+  background: #161d29;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: 500 14px "IBM Plex Sans", sans-serif;
+}
+.doc-reader { display: grid; gap: 16px; }
+.doc-page {
+  background: #f4efe4;
+  color: #1b160f;
+  border-radius: 16px;
+  padding: 18px 20px;
+}
+.doc-page h3 {
+  margin: 0 0 10px;
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #6b5c45;
+}
+.doc-text {
+  margin: 0;
+  white-space: pre-wrap;
+  font: 400 14px/1.55 "IBM Plex Sans", sans-serif;
+}
 @media (max-width: 900px) {
   .hero, .film, .modes, .lab-grid, .buckets, .papers { grid-template-columns: 1fr; }
   .stage { min-height: 620px; }

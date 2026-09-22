@@ -34,6 +34,8 @@
     packFlashI: 0,
     packFlashShow: false,
     fileHint: "",
+    doc: null,
+    docFilter: "",
     nav: [],
   };
 
@@ -47,6 +49,8 @@
       query: state.query,
       wiki: state.wiki,
       fileHint: state.fileHint,
+      doc: state.doc,
+      docFilter: state.docFilter,
       filmI: state.filmI,
       filmFb: state.filmFb,
       quizI: state.quizI,
@@ -258,6 +262,27 @@
         render();
       })
     );
+    const df = $("#doc-filter");
+    const find = $("#doc-find");
+    const applyFilter = () => {
+      const box = $("#doc-filter");
+      state.docFilter = box ? box.value : state.docFilter;
+      render();
+      const again = $("#doc-filter");
+      if (again) {
+        again.focus();
+        again.setSelectionRange(again.value.length, again.value.length);
+      }
+    };
+    if (df) {
+      df.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          applyFilter();
+        }
+      });
+    }
+    if (find) find.addEventListener("click", applyFilter);
   }
 
   function hub() {
@@ -269,14 +294,14 @@
         <div>
           <span class="kicker">For ${YOU} · No login · Type like you text</span>
           <h1>${YOU}, what are you studying today?</h1>
-          <p class="lede">This desk is yours. Type a US CMA topic — cash flow, COSO, WACC, ethics, NPV — or upload class notes / a PDF. It maps to the 2024 IMA outline (Part 1 &amp; 2), pulls a plain-English snapshot, and opens every official IMA / FASB / SEC / COSO search.</p>
+          <p class="lede">This desk is yours. Type a US CMA topic — or upload class notes / a PDF. Every page of the file is read, explained in plain English, and shown back to you. Then it maps the 2024 IMA outline and opens IMA / FASB / SEC / COSO searches.</p>
           <form class="seek" id="seek-form">
             <input id="seek-input" type="search" name="q" autocomplete="off" placeholder="e.g. statement of cash flows, COSO, WACC…" />
             <button class="btn primary" type="submit">Find resources</button>
           </form>
           <label class="upload">
             <input id="seek-file" type="file" accept=".pdf,.txt,.md,.text" hidden />
-            Or upload notes / PDF
+            Or upload notes / PDF — every page is read
           </label>
           <p class="note" id="seek-status"></p>
           <div class="topic-chips">${chips}</div>
@@ -723,8 +748,20 @@
       <section class="modes">${cards}</section>`;
   }
 
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   async function openPack(q, fileHint) {
     pushHist();
+    if (!fileHint) {
+      state.doc = null;
+      state.docFilter = "";
+    }
     state.query = q;
     state.fileHint = fileHint || "";
     state.packTab = "teach";
@@ -733,7 +770,7 @@
     state.view = "pack";
     state.pack = Engine.packFromQuery(q, fileHint);
     render();
-    state.wiki = await Engine.wiki(q);
+    state.wiki = await Engine.wiki((state.pack.topic && state.pack.topic.title) || q);
     state.busy = false;
     render();
   }
@@ -753,42 +790,79 @@
     });
   }
 
-  async function textFromPdf(file) {
+  async function textFromPdf(file, onPage) {
     const pdfjs = await loadPdfJs();
     const buf = await file.arrayBuffer();
     const doc = await pdfjs.getDocument({ data: buf }).promise;
-    const max = Math.min(doc.numPages, 8);
-    let text = "";
+    const max = doc.numPages;
+    const pages = [];
     for (let i = 1; i <= max; i += 1) {
+      if (onPage) onPage(i, max);
       const page = await doc.getPage(i);
       const content = await page.getTextContent();
-      text += content.items.map((it) => it.str).join(" ") + " ";
+      const lines = Engine.linesFromPdfItems(content.items || []);
+      pages.push({
+        n: i,
+        lines,
+        text: lines.join("\n"),
+      });
     }
-    return text;
+    return { pages, numPages: max };
   }
 
   async function handleFile(file) {
     if (!file) return;
     const status = $("#seek-status");
-    if (status) status.textContent = "Reading " + file.name + "…";
+    if (status) status.textContent = "Reading every page of " + file.name + "…";
     try {
-      let text = "";
-      if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") text = await textFromPdf(file);
-      else text = await file.text();
-      const slice = text.slice(0, 4000);
-      const q = Engine.tokens(slice).slice(0, 12).join(" ") || file.name.replace(/\.[^.]+$/, "");
-      await openPack(q, file.name);
+      let pages = [];
+      if (/\.pdf$/i.test(file.name) || file.type === "application/pdf") {
+        const pdf = await textFromPdf(file, (i, n) => {
+          if (status) status.textContent = "Reading page " + i + " of " + n + " in " + file.name + "…";
+        });
+        pages = pdf.pages;
+      } else {
+        const text = await file.text();
+        pages = Engine.pagesFromPlainText(text);
+      }
+      const full = pages.map((p) => p.text).join("\n\n");
+      const words = Engine.tokens(full);
+      const empty = !full.replace(/\s/g, "").length;
+      const study = empty ? { walkthrough: [], flash: [], quiz: [], wordCount: 0, sectionCount: 0 } : Engine.studyFromPages(pages);
+      const headingBlob = study.walkthrough.map((s) => s.title + " " + s.explain).join(" ");
+      const q =
+        headingBlob.slice(0, 500) +
+        " " +
+        words.slice(0, 40).join(" ");
+      const look = (q + " " + full.slice(0, 6000)).trim() || file.name.replace(/\.[^.]+$/, "");
+      state.doc = {
+        name: file.name,
+        pages,
+        study,
+        words: study.wordCount || words.length,
+        empty,
+      };
+      state.docFilter = "";
+      await openPack(look, file.name);
+      if (status && empty) {
+        /* pack already shown */
+      }
     } catch (err) {
-      if (status) status.textContent = "Could not read that file. Type the topic instead — even one word is enough.";
+      if (status)
+        status.textContent =
+          "Could not read that file. If it is a scanned photo-PDF, type the topic instead — Gowtham still gets the IMA searches.";
     }
   }
 
-  function packBank() {
+  function topicBank() {
     const t = state.pack && state.pack.topic;
     if (t && t.studio === "cfs") {
       return {
         quiz: (CFS.quiz && CFS.quiz.length >= 8 ? CFS.quiz : t.quiz) || CFS.quiz,
-        flash: (t.flash && t.flash.length ? t.flash.concat(CFS.flash.filter((c) => !t.flash.some((x) => x.f === c.f))) : CFS.flash),
+        flash:
+          t.flash && t.flash.length
+            ? t.flash.concat(CFS.flash.filter((c) => !t.flash.some((x) => x.f === c.f)))
+            : CFS.flash,
       };
     }
     const quiz = (t && t.quiz) || [];
@@ -805,28 +879,30 @@
       quiz: [
         {
           q: `${YOU} searched “${p.query}”. Where should a US CMA candidate open the outline first?`,
-          opts: [
-            p1,
-            "Skip IMA and only watch random reels",
-            "It is never tested on the CMA exam",
-            "Only on the US individual tax return (Form 1040)",
-          ],
+          opts: [p1, "Skip IMA and only watch random reels", "It is never tested on the CMA exam", "Only on the US individual tax return (Form 1040)"],
           a: 0,
           explain: `Start with ${p1}. Then use the “All US CMA resources” tab for IMA CSO, LOS, handbook, FASB, SEC and review-course searches.`,
         },
         {
           q: `If this topic also shows up on Part 2, the closest CSO bucket is:`,
-          opts: [
-            p2,
-            "The IMA ethics statement only — never elsewhere",
-            "SOX Section 404 only, with no CSO mapping",
-            "It is never in CMA Part 2",
-          ],
+          opts: [p2, "The IMA ethics statement only — never elsewhere", "SOX Section 404 only, with no CSO mapping", "It is never in CMA Part 2"],
           a: 0,
           explain: `The studio maps this to ${p2}. Open the IMA / FASB / COSO cards on the links tab.`,
         },
       ],
     };
+  }
+
+  function packBank() {
+    const topic = topicBank();
+    const study = state.doc && state.doc.study;
+    if (study && (study.quiz.length || study.flash.length)) {
+      return {
+        quiz: (study.quiz || []).concat(topic.quiz || []),
+        flash: (study.flash || []).concat(topic.flash || []),
+      };
+    }
+    return topic;
   }
 
   function packView() {
@@ -841,9 +917,16 @@
     const also = (p.also || [])
       .map((t) => `<button class="chip-topic" data-q="${t.title}" type="button">${t.title}</button>`)
       .join("");
-    const tabs = ["teach", "flash", "quiz", "links"]
+    const tabKeys = state.doc ? ["teach", "file", "flash", "quiz", "links"] : ["teach", "flash", "quiz", "links"];
+    const tabs = tabKeys
       .map((k) => {
-        const label = { teach: "Explain", flash: "Flashcards", quiz: "Quiz", links: "All US CMA resources" }[k];
+        const label = {
+          teach: "Explain",
+          file: "Your document",
+          flash: "Flashcards",
+          quiz: "Quiz",
+          links: "All US CMA resources",
+        }[k];
         return `<button class="btn ${state.packTab === k ? "primary" : "ghost"}" data-tab="${k}" type="button">${label}</button>`;
       })
       .join("");
@@ -856,9 +939,15 @@
           </div>`
         : "";
     return `
-      <span class="kicker">${p.fileHint ? "From your file · " + p.fileHint : "Study pack"}</span>
-      <h2>${title}</h2>
-      <p class="lede">${topic ? topic.blurb : "No built-in lesson for this exact title yet — the 2024 IMA outline is guessed from the words, and every official US CMA search below is live."}</p>
+      <span class="kicker">${p.fileHint ? "From Gowtham’s file · " + esc(p.fileHint) : "Study pack"}</span>
+      <h2>${state.doc ? "Gowtham, here is your file" : esc(title)}</h2>
+      <p class="lede">${
+        state.doc
+          ? `${esc(state.doc.name)} — ${state.doc.pages.length} page${state.doc.pages.length === 1 ? "" : "s"}, about ${state.doc.words} words. Everything readable in the file is below. ${topic ? "Closest CMA map: " + topic.title + "." : "The IMA searches are still live even if this is not a stock topic."}`
+          : topic
+            ? topic.blurb
+            : "No built-in lesson for this exact title yet — the 2024 IMA outline is guessed from the words, and every official US CMA search below is live."
+      }</p>
       <div class="papers">
         <div class="bucket op"><h3>CMA Part 1</h3><ul class="plain">${p1 || "<li>Check the IMA CSO</li>"}</ul></div>
         <div class="bucket inv"><h3>CMA Part 2</h3><ul class="plain">${p2 || "<li>Check the IMA CSO</li>"}</ul></div>
@@ -873,6 +962,9 @@
     const p = state.pack;
     const topic = p.topic;
     const bank = packBank();
+    if (state.packTab === "file") {
+      return docFileView();
+    }
     if (state.packTab === "links") {
       const cards = p.portals
         .map(
@@ -949,8 +1041,61 @@
         ? `<p class="note">Fetching a plain-English snapshot…</p>`
         : "";
     return `
-      ${notes ? `<ul class="teach">${notes}</ul>` : `<p class="lede">Use the links tab — it already searched IMA, FASB, SEC, COSO, review courses and YouTube for “${p.query}”.</p>`}
+      ${docWalkthrough()}
+      ${notes ? `<ul class="teach">${notes}</ul>` : state.doc ? "" : `<p class="lede">Use the links tab — it already searched IMA, FASB, SEC, COSO, review courses and YouTube for “${esc(p.query)}”.</p>`}
       ${wiki}`;
+  }
+
+  function docWalkthrough() {
+    const d = state.doc;
+    if (!d) return "";
+    const wt = (d.study && d.study.walkthrough) || [];
+    if (d.empty) {
+      return `<div class="cheat"><span class="kicker">For ${YOU}</span><p class="note">The file opened, but there is no selectable text (common with photo scans). Type the heading you see, or upload a PDF that still has text.</p></div>`;
+    }
+    if (!wt.length) {
+      return `<div class="cheat"><span class="kicker">For ${YOU}</span><p class="note">${d.pages.length} page(s) were read. Open <strong>Your document</strong> to see every line. Headings were not clear enough to auto-section.</p></div>`;
+    }
+    const items = wt
+      .map(
+        (s) => `
+        <article class="doc-explain">
+          <h3>${esc(s.title)} <small>page ${s.page}</small></h3>
+          <p>${esc(s.explain)}</p>
+          ${
+            s.body && s.body.length > (s.explain || "").length + 20
+              ? `<details><summary>Whole section from the file</summary><p>${esc(s.body)}</p></details>`
+              : ""
+          }
+        </article>`
+      )
+      .join("");
+    return `<div class="doc-walk"><span class="kicker">Explaining the file to ${YOU}</span>
+      <p class="lede">Section by section, in file order. This is your document — not a random blog. Open <strong>Your document</strong> for every page word-for-word.</p>
+      ${items}</div>`;
+  }
+
+  function docFileView() {
+    const d = state.doc;
+    if (!d) return `<p class="lede">No file on this pack.</p>`;
+    const q = (state.docFilter || "").trim().toLowerCase();
+    const blocks = d.pages
+      .map((p) => {
+        const raw = p.text || "";
+        if (q && !raw.toLowerCase().includes(q) && String(p.n) !== q) return "";
+        const body = raw.trim()
+          ? esc(raw)
+          : "<em>No selectable text on this page (it may be a scan or an image).</em>";
+        return `<article class="doc-page"><h3>Page ${p.n}</h3><pre class="doc-text">${body}</pre></article>`;
+      })
+      .join("");
+    return `
+      <div class="doc-toolbar">
+        <input id="doc-filter" type="search" placeholder="Find a word in the file…" value="${esc(state.docFilter)}" />
+        <button class="btn" id="doc-find" type="button">Find</button>
+        <span class="note">${d.pages.length} page${d.pages.length === 1 ? "" : "s"} · ${d.words} words — this is the file itself</span>
+      </div>
+      <div class="doc-reader">${blocks || "<p class='lede'>No page matched that search. Clear the box to see everything.</p>"}</div>`;
   }
 
   function bindPack() {
