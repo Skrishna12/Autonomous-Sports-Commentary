@@ -357,6 +357,84 @@ window.Engine = {
     return a;
   },
 
+  keyTerms(text) {
+    const stop = new Set(
+      "the a an of and or for to in on with from by as is are was be this that which who your you our their it its at into about over under that than then also than when what how not only into such than each both more most some any can may must will should than".split(
+        " "
+      )
+    );
+    const counts = {};
+    this.norm(text)
+      .split(" ")
+      .forEach((w) => {
+        if (w.length < 5 || stop.has(w) || /^\d+$/.test(w)) return;
+        counts[w] = (counts[w] || 0) + 1;
+      });
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a] || b.length - a.length);
+  },
+
+  defsFromSentences(sents) {
+    const out = [];
+    sents.forEach((item) => {
+      const s = item.t;
+      const m = s.match(/^(.{3,80}?)\s+(is|are|means|refers to|equals|includes)\s+(.{8,180}?)[.!?]?$/i);
+      if (!m) return;
+      const term = m[1].replace(/^(the|a|an)\s+/i, "").trim();
+      const def = m[3].replace(/\.$/, "").trim();
+      if (term.split(" ").length > 12) return;
+      out.push({ term, def, sent: s, page: item.page, title: item.title });
+    });
+    return out;
+  },
+
+  paragraphSections(pages) {
+    const chunks = [];
+    pages.forEach((p) => {
+      const blob = (p.lines && p.lines.length ? p.lines.join(" ") : p.text) || "";
+      const bits = this.sentences(blob);
+      if (!bits.length && blob.trim().length > 25) {
+        chunks.push({ title: "Page " + p.n, page: p.n, lines: [blob.trim()] });
+        return;
+      }
+      for (let i = 0; i < bits.length; i += 2) {
+        const piece = bits.slice(i, i + 2).join(" ");
+        chunks.push({
+          title: (bits[i] || "Point").split(" ").slice(0, 8).join(" ") + (bits[i].split(" ").length > 8 ? "…" : ""),
+          page: p.n,
+          lines: [piece],
+        });
+      }
+    });
+    return chunks;
+  },
+
+  clozeQuiz(item, terms) {
+    const words = item.t.split(" ");
+    const idx = words.findIndex((w) => {
+      const n = this.norm(w.replace(/[^a-z0-9]/gi, ""));
+      return n.length >= 5 && terms.includes(n);
+    });
+    if (idx < 0) return null;
+    const raw = words[idx].replace(/[.,;:]+$/, "");
+    const blank = words.slice();
+    blank[idx] = "______";
+    const others = terms.filter((t) => t !== this.norm(raw)).slice(0, 8);
+    if (others.length < 3) return null;
+    const picks = this.shuffle(others).slice(0, 3).map((t) => t);
+    const opts = this.shuffle([raw, picks[0], picks[1], picks[2]]);
+    const a = opts.findIndex((o) => this.norm(o) === this.norm(raw) || o === raw);
+    if (a < 0) return null;
+    return {
+      q: `Fill the blank from the uploaded notes (page ${item.page}): “${blank.join(" ")}”`,
+      opts,
+      a,
+      explain: `The notes say: ${item.t} That is from ${item.title || "the file"}, page ${item.page}.`,
+      traps: opts.map((o, i) =>
+        i === a ? "" : `“${o}” is a word from the file, but it does not belong in this sentence.`
+      ),
+    };
+  },
+
   studyFromPages(pages) {
     const list = pages || [];
     const sections = [];
@@ -383,7 +461,11 @@ window.Engine = {
     });
     if (cur.lines.length || cur.title) sections.push(cur);
 
-    const walkthrough = sections
+    let src = sections;
+    const headed = sections.filter((s) => s.title !== "Start of the notes" && s.lines.join(" ").length > 25);
+    if (headed.length < 3) src = this.paragraphSections(list);
+
+    const walkthrough = src
       .map((s) => {
         const body = s.lines.join(" ").replace(/\s+/g, " ").trim();
         const bits = this.sentences(body);
@@ -394,50 +476,100 @@ window.Engine = {
           body,
         };
       })
-      .filter((s) => s.body.length > 25);
+      .filter((s) => s.body.length > 20);
 
     const allSents = [];
     walkthrough.forEach((s) => {
-      this.sentences(s.body).forEach((t) => {
+      const bits = this.sentences(s.body);
+      (bits.length ? bits : s.body.length > 20 ? [s.body] : []).forEach((t) => {
         allSents.push({ t, page: s.page, title: s.title });
       });
     });
 
-    const flash = walkthrough.slice(0, 40).map((s) => ({
-      f: s.title + (s.page ? " · page " + s.page : ""),
-      b: s.explain || s.body.slice(0, 400),
-    }));
+    const fullText = list.map((p) => p.text).join(" ");
+    const terms = this.keyTerms(fullText);
+    const defs = this.defsFromSentences(allSents);
+
+    const flash = [];
+    const seenF = new Set();
+    const addFlash = (f, b) => {
+      const k = this.norm(f).slice(0, 80);
+      if (!k || seenF.has(k) || !b) return;
+      seenF.add(k);
+      flash.push({ f, b });
+    };
+    walkthrough.forEach((s) => {
+      addFlash(s.title + (s.page ? " (page " + s.page + ")" : ""), s.body.slice(0, 500));
+    });
+    defs.forEach((d) => {
+      addFlash(d.term + " — from the file", d.def + (d.page ? " (page " + d.page + ")" : ""));
+    });
+    allSents.slice(0, 20).forEach((s) => {
+      const words = s.t.split(" ");
+      if (words.length < 8) return;
+      addFlash("Complete this line from page " + s.page, s.t);
+    });
 
     const quiz = [];
-    const pool = allSents.filter((x) => /[a-z]/i.test(x.t));
-    const picks = this.shuffle(pool).slice(0, 24);
-    picks.forEach((right) => {
-      if (quiz.length >= 10) return;
-      const others = this.shuffle(pool.filter((x) => x.t !== right.t)).slice(0, 3);
+    const pushQ = (item) => {
+      if (!item || quiz.length >= 12) return;
+      if (quiz.some((q) => q.q === item.q)) return;
+      quiz.push(item);
+    };
+
+    defs.forEach((d) => {
+      const other = defs.filter((x) => x.def !== d.def).map((x) => x.def);
+      const extra = allSents.filter((x) => x.t !== d.sent).map((x) => x.t.slice(0, 160));
+      const distract = this.shuffle(other.concat(extra)).filter((x) => this.norm(x) !== this.norm(d.def)).slice(0, 3);
+      if (distract.length < 3) return;
+      const opts = this.shuffle([d.def, distract[0], distract[1], distract[2]]);
+      pushQ({
+        q: `From the uploaded notes${d.title ? " (“" + d.title + "”)" : ""}, ${d.term} is:`,
+        opts,
+        a: opts.indexOf(d.def),
+        explain: `The file says: ${d.sent}`,
+        traps: opts.map((o, i) => (i === opts.indexOf(d.def) ? "" : "That is a different line from the same file.")),
+      });
+    });
+
+    walkthrough.forEach((s) => {
+      if (walkthrough.length < 4) return;
+      const others = this.shuffle(walkthrough.filter((x) => x.title !== s.title)).slice(0, 3);
+      if (others.length < 3) return;
+      const opts = this.shuffle([s.title, others[0].title, others[1].title, others[2].title]);
+      pushQ({
+        q: `Which heading in the uploaded file covers this: “${s.explain.slice(0, 140)}${s.explain.length > 140 ? "…" : ""}”?`,
+        opts,
+        a: opts.indexOf(s.title),
+        explain: `That paragraph sits under “${s.title}” on page ${s.page}. Full line: ${s.explain}`,
+        traps: opts.map((o, i) => (i === opts.indexOf(s.title) ? "" : `“${o}” is another heading in the same file.`)),
+      });
+    });
+
+    this.shuffle(allSents).forEach((item) => {
+      pushQ(this.clozeQuiz(item, terms));
+    });
+
+    this.shuffle(allSents).forEach((right) => {
+      const others = this.shuffle(allSents.filter((x) => x.t !== right.t)).slice(0, 3);
       if (others.length < 3) return;
       const opts = this.shuffle([right.t, others[0].t, others[1].t, others[2].t]);
-      const a = opts.indexOf(right.t);
-      quiz.push({
-        q: `From Gowtham’s uploaded notes (page ${right.page}${right.title ? ", “" + right.title + "”" : ""}), which line is actually in the file?`,
+      pushQ({
+        q: `What do the uploaded notes say under “${right.title}” (page ${right.page})?`,
         opts,
-        a,
-        explain:
-          "That sentence is copied from the uploaded document. The other three lines are also from the file but belong to a different point — go back to that page and read the surrounding paragraph.",
+        a: opts.indexOf(right.t),
+        explain: `Copied from the file, page ${right.page}. Read that page again if this was fuzzy.`,
         traps: opts.map((o, i) =>
-          i === a
-            ? ""
-            : "That line is in the notes too, but it is a different point. The question asked for the fact from page " +
-              right.page +
-              "."
+          i === opts.indexOf(right.t) ? "" : "That sentence is in the file under a different heading."
         ),
       });
     });
 
-    const words = this.tokens(list.map((p) => p.text).join(" "));
+    const words = this.tokens(fullText);
     return {
       walkthrough,
-      flash,
-      quiz,
+      flash: flash.slice(0, 40),
+      quiz: quiz.slice(0, 12),
       wordCount: words.length,
       sectionCount: walkthrough.length,
     };

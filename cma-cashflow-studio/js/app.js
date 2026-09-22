@@ -894,15 +894,14 @@
   }
 
   function packBank() {
-    const topic = topicBank();
     const study = state.doc && state.doc.study;
-    if (study && (study.quiz.length || study.flash.length)) {
+    if (state.doc && !state.doc.empty && study) {
       return {
-        quiz: (study.quiz || []).concat(topic.quiz || []),
-        flash: (study.flash || []).concat(topic.flash || []),
+        quiz: study.quiz || [],
+        flash: study.flash || [],
       };
     }
-    return topic;
+    return topicBank();
   }
 
   function packView() {
@@ -931,7 +930,7 @@
       })
       .join("");
     const studio =
-      topic && topic.studio === "cfs"
+      !state.doc && topic && topic.studio === "cfs"
         ? `<div class="actions">
             <button class="btn primary" data-go="film" type="button">Play the cash-flow film</button>
             <button class="btn" data-go="sort" type="button">Classification game</button>
@@ -980,10 +979,10 @@
     }
     if (state.packTab === "flash") {
       const cards = bank.flash;
-      if (!cards.length) return `<p class="lede">No flashcards baked in for this topic yet. Open “All US CMA resources” and use the IMA outline. Or pick a nearby topic chip.</p>`;
+      if (!cards.length) return `<p class="lede">${state.doc ? "The file was read, but there was not enough text to cut into flashcards. Open Your document and read the pages." : "No flashcards baked in for this topic yet. Open “All US CMA resources” and use the IMA outline. Or pick a nearby topic chip."}</p>`;
       const card = cards[state.packFlashI % cards.length];
       return `
-        <span class="kicker">${(state.packFlashI % cards.length) + 1} / ${cards.length}</span>
+        <span class="kicker">${state.doc ? "From the file · " : ""}${(state.packFlashI % cards.length) + 1} / ${cards.length}</span>
         <button class="flash" id="pack-flip" type="button">
           <div class="tag">${state.packFlashShow ? "ANSWER" : "PROMPT"}</div>
           <p>${state.packFlashShow ? card.b : card.f}</p>
@@ -995,7 +994,7 @@
     }
     if (state.packTab === "quiz") {
       const qs = bank.quiz;
-      if (!qs.length) return `<p class="lede">No quiz bank for this title yet. Use the practice MCQ and essay searches in the last tab — those pull US CMA review sources.</p>`;
+      if (!qs.length) return `<p class="lede">${state.doc ? "The file was read, but there was not enough text to build a quiz. Open Your document." : "No quiz bank for this title yet. Use the practice MCQ and essay searches in the last tab — those pull US CMA review sources."}</p>`;
       if (state.packQuizI >= qs.length) {
         state.packQuizScore = scoreOf(state.packQuizAnswers, qs);
         return `<div class="ending"><div class="score-big">${state.packQuizScore}/${qs.length}</div>
@@ -1017,7 +1016,7 @@
         })
         .join("");
       return `<div class="quiz">
-        <span class="kicker">Question ${state.packQuizI + 1} / ${qs.length}</span>
+        <span class="kicker">${state.doc ? "From the file · " : ""}Question ${state.packQuizI + 1} / ${qs.length}</span>
         <h2 class="q">${item.q}</h2>
         <div class="options">${opts}</div>
         ${picked !== null ? quizFeedback(item, picked) : ""}
@@ -1042,8 +1041,8 @@
         : "";
     return `
       ${docWalkthrough()}
-      ${notes ? `<ul class="teach">${notes}</ul>` : state.doc ? "" : `<p class="lede">Use the links tab — it already searched IMA, FASB, SEC, COSO, review courses and YouTube for “${esc(p.query)}”.</p>`}
-      ${wiki}`;
+      ${state.doc ? "" : notes ? `<ul class="teach">${notes}</ul>` : `<p class="lede">Use the links tab — it already searched IMA, FASB, SEC, COSO, review courses and YouTube for “${esc(p.query)}”.</p>`}
+      ${state.doc ? "" : wiki}`;
   }
 
   function docWalkthrough() {
@@ -1056,22 +1055,19 @@
     if (!wt.length) {
       return `<div class="cheat"><span class="kicker">For ${YOU}</span><p class="note">${d.pages.length} page(s) were read. Open <strong>Your document</strong> to see every line. Headings were not clear enough to auto-section.</p></div>`;
     }
+    const nFlash = (d.study && d.study.flash && d.study.flash.length) || 0;
+    const nQuiz = (d.study && d.study.quiz && d.study.quiz.length) || 0;
     const items = wt
       .map(
         (s) => `
         <article class="doc-explain">
           <h3>${esc(s.title)} <small>page ${s.page}</small></h3>
-          <p>${esc(s.explain)}</p>
-          ${
-            s.body && s.body.length > (s.explain || "").length + 20
-              ? `<details><summary>Whole section from the file</summary><p>${esc(s.body)}</p></details>`
-              : ""
-          }
+          <p>${esc(s.body.slice(0, 1200))}${s.body.length > 1200 ? "…" : ""}</p>
         </article>`
       )
       .join("");
-    return `<div class="doc-walk"><span class="kicker">Explaining the file to ${YOU}</span>
-      <p class="lede">Section by section, in file order. This is your document — not a random blog. Open <strong>Your document</strong> for every page word-for-word.</p>
+    return `<div class="doc-walk"><span class="kicker">From Gowtham’s file</span>
+      <p class="lede">${nFlash} flashcards and ${nQuiz} quiz questions were built from this document. Open <strong>Your document</strong> for every page. Open <strong>Flashcards</strong> or <strong>Quiz</strong> to drill the same facts.</p>
       ${items}</div>`;
   }
 
